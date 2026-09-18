@@ -11,7 +11,7 @@ const ROLE_BADGE_COLORS = {
 };
 
 export default function Sidebar({ currentView, onViewChange, isOpen, onClose }) {
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
   const { taskStats, leads } = useCRM();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -121,23 +121,31 @@ export default function Sidebar({ currentView, onViewChange, isOpen, onClose }) 
           {navItemsIntelligence.map(renderNavBtn)}
         </nav>
 
-        <div className="text-[10.5px] font-semibold tracking-wider text-[#94A3B8] px-2.5 pt-3 pb-1.5 uppercase">
-          Insights
-        </div>
-        <nav className="space-y-1 mb-2">
-          {navItemsInsights.map(renderNavBtn)}
-        </nav>
+        {/* Insights: hidden for agents */}
+        {(can('reports', 'read') || can('analytics', 'read')) && (
+          <>
+            <div className="text-[10.5px] font-semibold tracking-wider text-[#94A3B8] px-2.5 pt-3 pb-1.5 uppercase">
+              Insights
+            </div>
+            <nav className="space-y-1 mb-2">
+              {navItemsInsights.map(renderNavBtn)}
+            </nav>
+          </>
+        )}
 
         {/* User Management - admin only */}
-        {user?.role === 'admin' && (
+        {can('users', 'read') && (
           <nav className="space-y-1 mt-1">
             {renderNavBtn({ id: 'users', label: 'User Management', icon: 'users' })}
           </nav>
         )}
 
-        <nav className="space-y-1 mt-1">
-          {renderNavBtn({ id: 'settings', label: 'Settings', icon: 'settings' })}
-        </nav>
+        {/* Settings - hidden for agent and viewer */}
+        {can('settings', 'read') && (
+          <nav className="space-y-1 mt-1">
+            {renderNavBtn({ id: 'settings', label: 'Settings', icon: 'settings' })}
+          </nav>
+        )}
 
         {/* User profile with logout */}
         <div className="mt-auto pt-3 border-t border-[#E2E8F0] relative">
@@ -167,16 +175,18 @@ export default function Sidebar({ currentView, onViewChange, isOpen, onClose }) 
                 <div className="text-[12.5px] font-bold text-[#0F172A]">{user?.name}</div>
                 <div className="text-[11px] text-[#64748B]">{user?.email}</div>
               </div>
-              <button
-                onClick={() => {
-                  onViewChange('settings');
-                  setShowUserMenu(false);
-                }}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-[12.5px] text-left hover:bg-[#F1F5F9] text-[#334155]"
-              >
-                <Icon name="settings" size={14} className="text-[#94A3B8]" />
-                Settings
-              </button>
+              {can('settings', 'read') && (
+                <button
+                  onClick={() => {
+                    onViewChange('settings');
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] text-[12.5px] text-left hover:bg-[#F1F5F9] text-[#334155]"
+                >
+                  <Icon name="settings" size={14} className="text-[#94A3B8]" />
+                  Settings
+                </button>
+              )}
               <button
                 onClick={() => {
                   logout();

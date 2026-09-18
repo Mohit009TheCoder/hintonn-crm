@@ -8,8 +8,16 @@ router.use(authenticate);
 
 router.get('/', authorize('pipeline', 'read'), (req, res) => {
   const db = getDb();
-  const stages = db.stages;
-  const contacts = db.contacts;
+  const stages = db.stages || [];
+  let contacts = db.contacts || [];
+
+  // Agent scoping — agents only see their own assigned leads in pipeline
+  if (req.user?.role === 'agent') {
+    const user = (db.users || []).find(u => u.id === req.user.id);
+    if (user) {
+      contacts = contacts.filter(c => c.rep === user.name);
+    }
+  }
 
   const board = {};
   stages.forEach(s => {
@@ -50,6 +58,14 @@ router.put('/:id/stage', authorize('pipeline', 'update'), (req, res) => {
   const db = getDb();
   const contact = db.contacts.find(c => Number(c.id) === Number(req.params.id));
   if (!contact) return res.status(404).json({ success: false, message: 'Lead not found' });
+
+  // Agent scoping — agent can only move their own assigned leads
+  if (req.user?.role === 'agent') {
+    const user = (db.users || []).find(u => u.id === req.user.id);
+    if (user && contact.rep !== user.name) {
+      return res.status(403).json({ success: false, message: 'Permission denied: you can only update your own assigned leads' });
+    }
+  }
 
   const prevStage = contact.stage;
   contact.stage = stage;

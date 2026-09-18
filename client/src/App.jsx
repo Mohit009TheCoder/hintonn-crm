@@ -32,6 +32,7 @@ import AddTaskModal from './components/modals/AddTaskModal';
 import AiListingModal from './components/modals/AiListingModal';
 import AddPartnerModal from './components/modals/AddPartnerModal';
 import AiAssistantModal from './components/modals/AiAssistantModal';
+import AddProjectModal from './components/modals/AddProjectModal';
 
 function LoadingScreen() {
   return (
@@ -43,7 +44,7 @@ function LoadingScreen() {
 }
 
 export default function App() {
-  const { user, authLoading } = useAuth();
+  const { user, authLoading, can } = useAuth();
   const [currentView, setCurrentView] = useState('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -56,12 +57,33 @@ export default function App() {
   const [activeAiListingProject, setActiveAiListingProject] = useState(null);
   const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
+  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
 
   // Show loading spinner while checking auth
   if (authLoading) return <LoginLoadingFallback />;
 
   // Not authenticated → show login
   if (!user) return <LoginView />;
+
+  const handleOpenAddLead = () => {
+    if (can('leads', 'create')) setIsAddLeadOpen(true);
+  };
+
+  const handleOpenAddPartner = () => {
+    if (can('partners', 'create')) setIsAddPartnerOpen(true);
+  };
+
+  const handleOpenAddTask = () => {
+    if (can('tasks', 'create')) setIsAddTaskOpen(true);
+  };
+
+  const handleOpenScheduleVisit = () => {
+    if (can('leads', 'update')) setIsScheduleVisitOpen(true);
+  };
+
+  const handleOpenAddProject = () => {
+    if (can('projects', 'create')) setIsAddProjectOpen(true);
+  };
 
   // Authenticated → show main app
   return (
@@ -86,7 +108,7 @@ export default function App() {
         <main className="w-full mx-auto px-5 md:px-8 py-6 pb-20 max-w-[1400px]">
           {currentView === 'overview' && (
             <Overview
-              onOpenAddLead={() => setIsAddLeadOpen(true)}
+              onOpenAddLead={handleOpenAddLead}
               onSelectLead={(id) => setActiveDrawerLeadId(id)}
               onViewChange={(v) => setCurrentView(v)}
             />
@@ -94,8 +116,8 @@ export default function App() {
 
           {currentView === 'calendar' && (
             <CalendarView
-              onOpenAddTask={() => setIsAddTaskOpen(true)}
-              onOpenScheduleVisit={() => setIsScheduleVisitOpen(true)}
+              onOpenAddTask={handleOpenAddTask}
+              onOpenScheduleVisit={handleOpenScheduleVisit}
               onSelectLead={(id) => setActiveDrawerLeadId(id)}
             />
           )}
@@ -104,7 +126,7 @@ export default function App() {
             <Pipeline
               onSelectLead={(id) => setActiveDrawerLeadId(id)}
               onOpenDialer={(lead) => setActiveDialerLead(lead)}
-              onOpenAddLead={() => setIsAddLeadOpen(true)}
+              onOpenAddLead={handleOpenAddLead}
             />
           )}
 
@@ -112,7 +134,7 @@ export default function App() {
             <Leads
               onSelectLead={(id) => setActiveDrawerLeadId(id)}
               onOpenDialer={(lead) => setActiveDialerLead(lead)}
-              onOpenAddLead={() => setIsAddLeadOpen(true)}
+              onOpenAddLead={handleOpenAddLead}
             />
           )}
 
@@ -120,6 +142,7 @@ export default function App() {
             <Projects
               onOpenAiListing={(project) => setActiveAiListingProject(project)}
               onViewChange={(v) => setCurrentView(v)}
+              onOpenAddProject={handleOpenAddProject}
             />
           )}
 
@@ -132,14 +155,23 @@ export default function App() {
           )}
 
           {currentView === 'partners' && (
-            <Partners onOpenAddPartner={() => setIsAddPartnerOpen(true)} />
+            <Partners onOpenAddPartner={handleOpenAddPartner} />
           )}
 
-          {currentView === 'reports' && <Reports />}
+          {/* Reports: restricted from agent */}
+          {currentView === 'reports' && (
+            can('reports', 'read') ? <Reports /> : <div className="p-8 text-center text-[#64748B]">Access restricted for your role.</div>
+          )}
 
-          {currentView === 'analytics' && <Analytics />}
+          {/* Analytics: restricted from agent */}
+          {currentView === 'analytics' && (
+            can('analytics', 'read') ? <Analytics /> : <div className="p-8 text-center text-[#64748B]">Access restricted for your role.</div>
+          )}
 
-          {currentView === 'settings' && <SettingsView />}
+          {/* Settings: Admin & Manager only */}
+          {currentView === 'settings' && (
+            can('settings', 'read') ? <SettingsView /> : <div className="p-8 text-center text-[#64748B]">Access restricted for your role.</div>
+          )}
 
           {currentView === 'lead-capture' && (
             <LeadCaptureView onSelectLead={(id) => setActiveDrawerLeadId(id)} />
@@ -149,15 +181,19 @@ export default function App() {
             <LeadNurtureView onSelectLead={(id) => setActiveDrawerLeadId(id)} />
           )}
 
+          {/* Post-booking & team analytics: restricted from agent */}
           {currentView === 'post-booking' && (
-            <PostBookingView onSelectLead={(id) => setActiveDrawerLeadId(id)} />
+            can('reports', 'read') ? <PostBookingView onSelectLead={(id) => setActiveDrawerLeadId(id)} /> : <div className="p-8 text-center text-[#64748B]">Access restricted for your role.</div>
           )}
 
           {currentView === 'team-analytics' && (
-            <TeamAnalyticsView onSelectLead={(id) => setActiveDrawerLeadId(id)} />
+            can('analytics', 'read') ? <TeamAnalyticsView onSelectLead={(id) => setActiveDrawerLeadId(id)} /> : <div className="p-8 text-center text-[#64748B]">Access restricted for your role.</div>
           )}
 
-          {currentView === 'users' && <UserManagementView />}
+          {/* User Management: Admin only */}
+          {currentView === 'users' && (
+            can('users', 'read') ? <UserManagementView /> : <div className="p-8 text-center text-[#64748B]">Access restricted for your role.</div>
+          )}
         </main>
       </div>
 
@@ -201,6 +237,10 @@ export default function App() {
 
       {isAddPartnerOpen && (
         <AddPartnerModal onClose={() => setIsAddPartnerOpen(false)} />
+      )}
+
+      {isAddProjectOpen && (
+        <AddProjectModal onClose={() => setIsAddProjectOpen(false)} />
       )}
 
       {isAiAssistantOpen && (

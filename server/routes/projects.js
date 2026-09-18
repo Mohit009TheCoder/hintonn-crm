@@ -1,5 +1,5 @@
 import express from 'express';
-import { getDb, saveDb } from '../data/db.js';
+import { getDb, saveDb, insertItem } from '../data/db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -15,13 +15,13 @@ router.get('/', authorize('projects', 'read'), (req, res) => {
   const db = getDb();
   const contacts = db.contacts || [];
 
-  const projectsWithStats = db.projects.map(p => {
+  const projectsWithStats = (db.projects || []).map(p => {
     const leadsForProject = contacts.filter(c => c.projectId === p.id);
     const matchedLeads = contacts.filter(c => {
       if (c.stage === 'won' || c.stage === 'lost') return false;
       const pref = c.preferences || {};
       const budgetMatch = (!pref.budgetRange || (pref.budgetRange[0] <= p.priceMax && pref.budgetRange[1] >= p.priceMin));
-      const configMatch = (!pref.bedrooms || p.configs.includes(pref.bedrooms));
+      const configMatch = (!pref.bedrooms || (p.configs && p.configs.includes(pref.bedrooms)));
       return budgetMatch && configMatch;
     });
 
@@ -47,9 +47,70 @@ router.get('/', authorize('projects', 'read'), (req, res) => {
   res.json({ success: true, data: projectsWithStats });
 });
 
+router.post('/', authorize('projects', 'create'), (req, res) => {
+  const { name, type, loc, configs, priceMin, priceMax, totalUnits, available, possession, units } = req.body;
+  if (!name || !loc) {
+    return res.status(400).json({ success: false, message: 'Project name and location are required' });
+  }
+
+  const parsedConfigs = Array.isArray(configs)
+    ? configs
+    : (typeof configs === 'string' ? configs.split(',').map(s => s.trim()) : ['2 BHK', '3 BHK']);
+
+  const totUnits = Number(totalUnits) || 24;
+  const availUnits = available !== undefined ? Number(available) : totUnits;
+
+  let projectUnits = units;
+  if (!Array.isArray(projectUnits) || projectUnits.length === 0) {
+    projectUnits = [];
+    const unitCount = Math.min(totUnits, 36);
+    const floors = Math.max(1, Math.ceil(unitCount / 4));
+    let uid = 1;
+    for (let f = 1; f <= floors && uid <= unitCount; f++) {
+      for (let u = 1; u <= 4 && uid <= unitCount; u++) {
+        const cfg = parsedConfigs[(uid - 1) % parsedConfigs.length] || '2 BHK';
+        const isSold = uid > availUnits;
+        projectUnits.push({
+          id: uid,
+          unitNumber: `${f}0${u}`,
+          floor: f,
+          config: cfg,
+          status: isSold ? 'sold' : 'available',
+          price: Number(priceMin) || 5000000
+        });
+        uid++;
+      }
+    }
+  }
+
+  const newProject = {
+    name,
+    type: type || 'Residential',
+    loc,
+    configs: parsedConfigs,
+    priceMin: Number(priceMin) || 4500000,
+    priceMax: Number(priceMax) || 8500000,
+    totalUnits: totUnits,
+    available: availUnits,
+    possession: possession || 'Dec 2026',
+    units: projectUnits,
+  };
+
+  const saved = insertItem('projects', newProject);
+  res.status(201).json({
+    success: true,
+    data: {
+      ...saved,
+      leadCount: 0,
+      matchedLeadCount: 0,
+      brochureStats: { sent: 0, opened: 0, openRate: 0 }
+    }
+  });
+});
+
 router.get('/:id', authorize('projects', 'read'), (req, res) => {
   const db = getDb();
-  const project = db.projects.find(p => Number(p.id) === Number(req.params.id));
+  const project = (db.projects || []).find(p => Number(p.id) === Number(req.params.id));
   if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
   res.json({ success: true, data: project });
 });

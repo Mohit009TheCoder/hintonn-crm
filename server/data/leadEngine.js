@@ -18,6 +18,7 @@ const SOURCE_SCORES = {
   'Instagram': 70,
   'Call-in': 70,
   'Housing.com': 65,
+  'JustDial': 65,
   'WhatsApp': 60,
   'Website': 55,
 };
@@ -38,6 +39,8 @@ const SOURCE_ALIASES = {
   'magicbricks': 'MagicBricks',
   'housing_com': 'Housing.com',
   'housing': 'Housing.com',
+  'justdial': 'JustDial',
+  'just_dial': 'JustDial',
   'website': 'Website',
 };
 

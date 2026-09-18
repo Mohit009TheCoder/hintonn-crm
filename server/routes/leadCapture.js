@@ -132,20 +132,41 @@ router.post(['/webhook', '/webhook/:source'], async (req, res) => {
       stageEnteredAt: new Date().toISOString(),
     };
 
-    const savedLead = insertItem('contacts', newLead);
+    let savedLead;
+    if (isDuplicate) {
+      // Map to duplicate_leads schema structure
+      const duplicateData = {
+        name,
+        phone,
+        email: email || '',
+        source: normalizedSource,
+        config: config || '',
+        budget: budget ? Number(budget) : 0,
+        message: message || '',
+        duplicate_of: duplicates[0].id,
+        match_type: duplicates[0].matchType || 'phone',
+        status: 'pending',
+        capture_data: newLead.capture,
+      };
+      savedLead = insertItem('duplicateLeads', duplicateData);
+    } else {
+      savedLead = insertItem('contacts', newLead);
+    }
 
-    // 6. Create initial task
-    const taskTitle = `Follow up with ${name} from ${normalizedSource}`;
-    insertItem('tasks', {
-      contactId: savedLead.id,
-      title: taskTitle,
-      type: 'follow-up',
-      priority: score > 70 ? 'high' : 'medium',
-      due: 'Today, 5:00 PM',
-      status: 'pending',
-      assignee: assignedRep,
-      description: `New lead from ${normalizedSource}. Score: ${score}. ${message || ''}`,
-    });
+    // 6. Create initial task (only if not a duplicate)
+    if (!isDuplicate) {
+      const taskTitle = `Follow up with ${name} from ${normalizedSource}`;
+      insertItem('tasks', {
+        contactId: savedLead.id,
+        title: taskTitle,
+        type: 'follow-up',
+        priority: score > 70 ? 'high' : 'medium',
+        due: 'Today, 5:00 PM',
+        status: 'pending',
+        assignee: assignedRep,
+        description: `New lead from ${normalizedSource}. Score: ${score}. ${message || ''}`,
+      });
+    }
 
     // 7. Log UTM data if present
     if (utm_source || utm_campaign || utm_medium) {
@@ -158,13 +179,15 @@ router.post(['/webhook', '/webhook/:source'], async (req, res) => {
       });
     }
 
-    // 8. Trigger welcome automation (fire-and-forget)
-    triggerWelcomeMessage(savedLead).catch(err =>
-      console.error('Welcome automation error:', err.message)
-    );
+    // 8. Trigger welcome automation (fire-and-forget, only for non-duplicates)
+    if (!isDuplicate) {
+      triggerWelcomeMessage(savedLead).catch(err =>
+        console.error('Welcome automation error:', err.message)
+      );
+    }
 
-    // 8b. After-hours auto-response
-    const afterHours = handleAfterHoursLead(savedLead, db);
+    // 8b. After-hours auto-response (only for non-duplicates)
+    const afterHours = !isDuplicate ? handleAfterHoursLead(savedLead, db) : null;
 
     // 9. Check SLA
     const slaViolations = checkSLAViolations(db);

@@ -4,13 +4,19 @@ import { useAuth } from './AuthContext';
 
 const CRMContext = createContext(null);
 
+// In production (Vercel), use the Railway backend URL.
+// In dev, Vite proxies /api/* to localhost:5001 automatically.
+const API_BASE = (typeof __API_URL__ !== 'undefined' && __API_URL__) ? __API_URL__ : '';
+
 export function CRMProvider({ children }) {
   const toast = useToast();
   const { token, logout } = useAuth();
 
   const authFetch = useCallback(
     async (url, options = {}) => {
-      const res = await fetch(url, {
+      // Prepend API_BASE so requests hit Railway in production
+      const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+      const res = await fetch(fullUrl, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -27,6 +33,7 @@ export function CRMProvider({ children }) {
     },
     [token, logout]
   );
+
 
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState([]);
@@ -51,6 +58,7 @@ export function CRMProvider({ children }) {
   const [nurtureAnalytics, setNurtureAnalytics] = useState(null);
   const [captureStats, setCaptureStats] = useState(null);
   const [postBookingSummary, setPostBookingSummary] = useState(null);
+  const [duplicateLeads, setDuplicateLeads] = useState([]);
   const [overduePayments, setOverduePayments] = useState([]);
   const [teamRepPerformance, setTeamRepPerformance] = useState([]);
   const [repSourceMatrix, setRepSourceMatrix] = useState(null);
@@ -65,6 +73,16 @@ export function CRMProvider({ children }) {
       if (data.success) setLeads(data.data);
     } catch (e) {
       console.error('Failed to fetch leads', e);
+    }
+  }, [authFetch]);
+
+  const fetchDuplicateLeads = useCallback(async () => {
+    try {
+      const res = await authFetch('/api/leads/duplicates');
+      const data = await res.json();
+      if (data.success) setDuplicateLeads(data.data);
+    } catch (e) {
+      console.error('Failed to fetch duplicate leads', e);
     }
   }, [authFetch]);
 
@@ -624,6 +642,28 @@ export function CRMProvider({ children }) {
     }
   };
 
+  // Projects
+  const addProject = async (projectData) => {
+    try {
+      const res = await authFetch('/api/projects', {
+        method: 'POST',
+        body: JSON.stringify(projectData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProjects(prev => [data.data, ...prev]);
+        toast('Project created successfully');
+        return { success: true, data: data.data };
+      } else {
+        toast(data.message || 'Failed to create project');
+        return { success: false, message: data.message };
+      }
+    } catch (e) {
+      toast('Failed to create project');
+      return { success: false, message: e.message };
+    }
+  };
+
   // Partners
   const addPartner = async (partnerData) => {
     try {
@@ -787,11 +827,12 @@ export function CRMProvider({ children }) {
         postBookingSummary,
         overduePayments,
         teamRepPerformance,
-        repSourceMatrix,
         sourceEffectiveness,
         docMissing,
+        duplicateLeads,
         refreshAll,
         fetchLeads,
+        fetchDuplicateLeads,
         fetchTasks,
         fetchCalls,
         fetchLeadSources,
@@ -822,6 +863,7 @@ export function CRMProvider({ children }) {
         createBroadcast,
         advanceSimulation,
         resetSimulation,
+        addProject,
         addPartner,
         markNotificationsRead,
         captureLead,

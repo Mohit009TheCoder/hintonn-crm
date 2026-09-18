@@ -9,8 +9,17 @@ router.get('/', authorize('leads', 'read'), (req, res) => {
   const { filter, assignee } = req.query;
   let tasks = getCollection('tasks');
 
+  // Agent scoping — agents see their own tasks
+  if (req.user?.role === 'agent') {
+    const db = getDb();
+    const currentUser = (db.users || []).find(u => u.id === req.user.id);
+    if (currentUser) {
+      tasks = tasks.filter(t => t.assignee === currentUser.name || !t.assignee);
+    }
+  }
+
   if (filter === 'my-tasks') {
-    const user = assignee || 'Rohan Mehta';
+    const user = assignee || req.user?.name || 'Rohan Mehta';
     tasks = tasks.filter(t => t.assignee === user || !t.assignee);
   } else if (filter === 'overdue') {
     tasks = tasks.filter(t => t.status !== 'completed' && t.due && t.due.includes('Today'));

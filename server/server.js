@@ -91,14 +91,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// Boot: init Firestore → then start Express
-const server = app.listen(PORT, () => {
-  console.log(`Hintonn CRM API Server running on port ${PORT}`);
-});
-
+// Boot: initialize database engine, then start listening
 initDb()
   .then(() => {
-    console.log('🚀 Server ready — Firestore connected');
+    const server = app.listen(PORT, () => {
+      console.log(`Hintonn CRM API Server running on port ${PORT}`);
+      console.log('🚀 Server ready — Database connected');
+    });
 
     // Set n8n webhook URL from settings or env
     const db = getDb();
@@ -151,6 +150,6 @@ initDb()
     }, 60 * 60 * 1000); // Every hour
   })
   .catch(err => {
-    console.error('❌ Failed to initialize Firestore:', err.message);
+    console.error('❌ Failed to initialize database:', err.message);
     process.exit(1);
   });

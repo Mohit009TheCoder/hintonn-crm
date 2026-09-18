@@ -45,10 +45,34 @@ router.get('/', authorize('leads', 'read'), (req, res) => {
   res.json({ success: true, count: leads.length, data: leads });
 });
 
+function checkLeadAccess(req, res, leadId) {
+  const db = getDb();
+  const lead = (db.contacts || []).find(l => Number(l.id) === Number(leadId));
+  if (!lead) {
+    res.status(404).json({ success: false, message: 'Lead not found' });
+    return null;
+  }
+  // Agent scoping — can only see/manage their own assigned leads
+  if (req.user?.role === 'agent') {
+    const user = (db.users || []).find(u => u.id === req.user.id);
+    if (user && lead.rep !== user.name) {
+      res.status(403).json({ success: false, message: 'Permission denied: you can only access your own assigned leads' });
+      return null;
+    }
+  }
+  return lead;
+}
+
+router.get('/duplicates', authorize('leads', 'read'), (req, res) => {
+  const duplicates = getCollection('duplicateLeads');
+  // Sort descending by created_at
+  duplicates.sort((a, b) => new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0));
+  res.json({ success: true, count: duplicates.length, data: duplicates });
+});
+
 router.get('/:id', authorize('leads', 'read'), (req, res) => {
-  const leads = getCollection('contacts');
-  const lead = leads.find(l => Number(l.id) === Number(req.params.id));
-  if (!lead) return res.status(404).json({ success: false, message: 'Lead not found' });
+  const lead = checkLeadAccess(req, res, req.params.id);
+  if (!lead) return;
   res.json({ success: true, data: lead });
 });
 
@@ -57,6 +81,12 @@ router.post('/', authorize('leads', 'create'), (req, res) => {
   if (!name || !phone) {
     return res.status(400).json({ success: false, message: 'Name and phone are required' });
   }
+
+  const db = getDb();
+  const currentUser = (db.users || []).find(u => u.id === req.user?.id);
+  const assignedRep = (req.user?.role === 'agent' && currentUser)
+    ? currentUser.name
+    : (rep || currentUser?.name || 'Rohan Mehta');
 
   const existingLeads = getCollection('contacts');
   const cleanPhone = phone.replace(/[\s-]/g, '');
@@ -74,12 +104,12 @@ router.post('/', authorize('leads', 'create'), (req, res) => {
     stage: stage || 'new',
     createdMinutesAgo: 0,
     reminderHoursAgo: 0,
-    rep: rep || 'Rohan Mehta',
+    rep: assignedRep,
     score: initialScore,
     duplicateOf: dup ? dup.id : null,
     tags: tags || ['hot-lead'],
     notes: [
-      { id: 1, text: 'Lead created in system', author: rep || 'Rohan Mehta', time: 'Just now' }
+      { id: 1, text: 'Lead created in system', author: assignedRep, time: 'Just now' }
     ],
     timeline: [
       { type: 'whatsapp', text: 'Lead registered from ' + (source || 'Website'), time: 'Just now', icon: 'messagecircle' }
@@ -106,6 +136,9 @@ router.post('/', authorize('leads', 'create'), (req, res) => {
 });
 
 router.put('/:id', authorize('leads', 'update'), (req, res) => {
+  const lead = checkLeadAccess(req, res, req.params.id);
+  if (!lead) return;
+
   const updated = updateItem('contacts', req.params.id, req.body);
   if (!updated) return res.status(404).json({ success: false, message: 'Lead not found' });
   res.json({ success: true, data: updated });
@@ -115,16 +148,19 @@ router.post('/:id/notes', authorize('leads', 'update'), (req, res) => {
   const { text, author } = req.body;
   if (!text) return res.status(400).json({ success: false, message: 'Note text is required' });
 
+  const lead = checkLeadAccess(req, res, req.params.id);
+  if (!lead) return;
+
   const db = getDb();
-  const lead = db.contacts.find(l => Number(l.id) === Number(req.params.id));
-  if (!lead) return res.status(404).json({ success: false, message: 'Lead not found' });
+  const currentUser = (db.users || []).find(u => u.id === req.user?.id);
+  const noteAuthor = author || currentUser?.name || 'Rohan Mehta';
 
   if (!lead.notes) lead.notes = [];
   const nextNoteId = lead.notes.length + 1;
   const newNote = {
     id: nextNoteId,
     text,
-    author: author || 'Rohan Mehta',
+    author: noteAuthor,
     time: 'Just now'
   };
   lead.notes.push(newNote);
@@ -142,10 +178,10 @@ router.post('/:id/notes', authorize('leads', 'update'), (req, res) => {
 });
 
 router.post('/:id/send-brochure', authorize('leads', 'update'), (req, res) => {
-  const db = getDb();
-  const lead = db.contacts.find(l => Number(l.id) === Number(req.params.id));
-  if (!lead) return res.status(404).json({ success: false, message: 'Lead not found' });
+  const lead = checkLeadAccess(req, res, req.params.id);
+  if (!lead) return;
 
+  const db = getDb();
   const project = db.projects.find(p => p.id === lead.projectId) || db.projects[0];
   const brochureName = project.name + ' - ' + (lead.config || 'General') + ' Brochure';
 

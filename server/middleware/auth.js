@@ -1,5 +1,6 @@
 import { verifyToken } from '../data/auth.js';
-import { getDb } from '../data/db.js';
+import { getDb, isSupabaseConfigured, getSupabaseClient } from '../data/db.js';
+import { fromDbRecord } from '../data/supabase.js';
 
 // Authenticate JWT token
 export function authenticate(req, res, next) {
@@ -20,15 +21,32 @@ export function authenticate(req, res, next) {
 
 // Check RBAC permission
 export function authorize(resource, action) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Authentication required' });
     }
 
     const db = getDb();
-    const user = (db.users || []).find(u => u.id === req.user.id);
+    let user = (db.users || []).find(u => u.id === req.user.id);
+
+    if (!user && isSupabaseConfigured()) {
+      try {
+        const client = getSupabaseClient();
+        if (client) {
+          const { data } = await client.from('users').select('*').eq('id', req.user.id).limit(1);
+          if (data && data.length > 0) {
+            user = fromDbRecord(data[0]);
+            if (!db.users) db.users = [];
+            db.users.push(user);
+          }
+        }
+      } catch (err) {
+        console.error('Authorize user lookup error:', err.message);
+      }
+    }
+
     if (!user || !user.isActive) {
-      return res.status(403).json({ success: false, message: 'Account inactive' });
+      return res.status(403).json({ success: false, message: 'Account inactive or not found' });
     }
 
     const perms = user.permissions || {};

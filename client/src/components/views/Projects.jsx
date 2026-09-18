@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '../../shared/Icons';
 import { useCRM } from '../../context/CRMContext';
+import { useAuth } from '../../context/AuthContext';
 
 function fmtINR(val) {
   if (val >= 10000000) return '₹' + (val / 10000000).toFixed(2) + ' Cr';
@@ -8,8 +9,9 @@ function fmtINR(val) {
   return '₹' + Number(val).toLocaleString('en-IN');
 }
 
-export default function Projects({ onOpenAiListing, onViewChange }) {
+export default function Projects({ onOpenAiListing, onViewChange, onOpenAddProject }) {
   const { projects, updateUnitStatus } = useCRM();
+  const { can } = useAuth();
 
   const [expandedProjectId, setExpandedProjectId] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
@@ -38,20 +40,49 @@ export default function Projects({ onOpenAiListing, onViewChange }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <div className="font-display font-extrabold text-[28px] tracking-tight text-[#0F172A]">
-          Projects &amp; Inventory
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="font-display font-extrabold text-[28px] tracking-tight text-[#0F172A]">
+            Projects &amp; Inventory
+          </div>
+          <div className="text-[#64748B] text-[14px] mt-0.5">
+            Live developments tracking, floor-by-floor unit grids, and instant AI property listings.
+          </div>
         </div>
-        <div className="text-[#64748B] text-[14px] mt-0.5">
-          Live developments tracking, floor-by-floor unit grids, and instant AI property listings.
-        </div>
+
+        {can('projects', 'create') && (
+          <button
+            onClick={onOpenAddProject}
+            className="self-start sm:self-auto px-4 py-2.5 bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] hover:opacity-90 text-white text-[13px] font-semibold rounded-[10px] shadow-sm flex items-center gap-2 transition-all"
+          >
+            <Icon name="plus" size={16} />
+            <span>Add Project</span>
+          </button>
+        )}
       </div>
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {projects.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-[13.5px] text-[#94A3B8] bg-white border border-[#E2E8F0] rounded-[16px]">
-            No projects registered yet.
+          <div className="col-span-full text-center py-16 px-4 bg-white border border-[#E2E8F0] rounded-[16px] flex flex-col items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center mb-3">
+              <Icon name="building" size={24} />
+            </div>
+            <div className="font-display font-bold text-[16px] text-[#0F172A] mb-1">
+              No projects registered yet
+            </div>
+            <div className="text-[13px] text-[#64748B] max-w-[360px] mb-5">
+              Add your real estate development projects to manage floor units, track buyer fit, and generate AI listings.
+            </div>
+            {can('projects', 'create') && (
+              <button
+                onClick={onOpenAddProject}
+                className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-[13px] font-semibold rounded-[10px] flex items-center gap-2 transition-all shadow-sm"
+              >
+                <Icon name="plus" size={15} />
+                <span>Add Your First Project</span>
+              </button>
+            )}
           </div>
         ) : (
           projects.map(p => {

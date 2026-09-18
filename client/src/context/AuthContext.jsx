@@ -2,10 +2,14 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 const AuthContext = createContext(null);
 
+// Uses Railway backend URL in production, relative path in dev (Vite proxy)
+const API_BASE = (typeof __API_URL__ !== 'undefined' && __API_URL__) ? __API_URL__ : '';
+
 const PERMISSIONS = {
   admin: {
     leads: { create: true, read: true, update: true, delete: true },
     projects: { create: true, read: true, update: true, delete: true },
+    pipeline: { read: true, update: true },
     tasks: { create: true, read: true, update: true, delete: true },
     partners: { create: true, read: true, update: true, delete: true },
     calls: { create: true, read: true, update: true, delete: true },
@@ -16,32 +20,36 @@ const PERMISSIONS = {
     users: { create: true, read: true, update: true, delete: true },
   },
   manager: {
-    leads: { create: true, read: true, update: true, delete: false },
-    projects: { create: true, read: true, update: true, delete: false },
+    leads: { create: true, read: true, update: true, delete: true },
+    projects: { create: true, read: true, update: true, delete: true },
+    pipeline: { read: true, update: true },
     tasks: { create: true, read: true, update: true, delete: true },
-    partners: { create: true, read: true, update: true, delete: false },
-    calls: { create: true, read: true, update: true, delete: false },
-    whatsapp: { create: true, read: true, update: true, delete: false },
+    partners: { create: true, read: true, update: true, delete: true },
+    calls: { create: true, read: true, update: true, delete: true },
+    whatsapp: { create: true, read: true, update: true, delete: true },
     reports: { read: true },
     analytics: { read: true },
     settings: { read: true, update: true },
-    users: { create: false, read: true, update: false, delete: false },
+    users: { create: false, read: false, update: false, delete: false }, // No user management
   },
   agent: {
-    leads: { create: true, read: true, update: true, delete: false },
+    leads: { create: true, read: true, update: true, delete: false }, // Only own assigned leads
     projects: { create: false, read: true, update: false, delete: false },
+    pipeline: { read: true, update: true }, // Only own assigned leads
     tasks: { create: true, read: true, update: true, delete: false },
     partners: { create: false, read: true, update: false, delete: false },
     calls: { create: true, read: true, update: false, delete: false },
     whatsapp: { create: false, read: true, update: false, delete: false },
-    reports: { read: true },
-    analytics: { read: false },
-    settings: { read: true, update: false },
-    users: { create: false, read: false, update: false, delete: false },
+    reports: { read: false }, // No reports
+    analytics: { read: false }, // No analytics
+    settings: { read: false, update: false }, // No settings
+    users: { create: false, read: false, update: false, delete: false }, // No users
   },
   viewer: {
+    // Read-only access. Cannot create/update/delete anything.
     leads: { create: false, read: true, update: false, delete: false },
     projects: { create: false, read: true, update: false, delete: false },
+    pipeline: { read: true, update: false },
     tasks: { create: false, read: true, update: false, delete: false },
     partners: { create: false, read: true, update: false, delete: false },
     calls: { create: false, read: true, update: false, delete: false },
@@ -61,7 +69,7 @@ export function AuthProvider({ children }) {
   // On mount, if token exists, verify with /api/auth/me
   useEffect(() => {
     if (token) {
-      fetch('/api/auth/me', {
+      fetch(`${API_BASE}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((r) => {
@@ -87,7 +95,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (identifier, password) => {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, password }),
@@ -103,7 +111,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (regData) => {
-    const res = await fetch('/api/auth/register', {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(regData),
@@ -126,10 +134,17 @@ export function AuthProvider({ children }) {
 
   const hasPermission = useCallback(
     (resource, action) => {
-      if (!user || !user.role) return false;
-      const rolePerms = PERMISSIONS[user.role];
+      if (!user) return false;
+      const role = (user.role || '').toLowerCase();
+      if (role === 'admin') return true; // Admin has full access to everything
+      if (user.permissions && user.permissions[resource]) {
+        if (user.permissions[resource][action] !== undefined) {
+          return Boolean(user.permissions[resource][action]);
+        }
+      }
+      const rolePerms = PERMISSIONS[role];
       if (!rolePerms || !rolePerms[resource]) return false;
-      return !!rolePerms[resource][action];
+      return Boolean(rolePerms[resource][action]);
     },
     [user]
   );
@@ -151,6 +166,7 @@ export function AuthProvider({ children }) {
         register,
         logout,
         hasPermission,
+        can: hasPermission,
         updateUser,
       }}
     >

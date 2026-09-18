@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getDb, saveDb, insertItem } from './db.js';
+import { getDb, saveDb, insertItem, isSupabaseConfigured, getSupabaseClient } from './db.js';
+import { fromDbRecord } from './supabase.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hintonn-crm-secret-key-change-in-production';
 const JWT_EXPIRY = '7d';
@@ -48,13 +49,33 @@ export async function registerUser({ name, email, phone, password, role, company
 
 // Login (email or phone)
 export async function loginUser({ identifier, password }) {
-  // identifier = email or phone
+  const cleanIdentifier = String(identifier || '').trim();
   const db = getDb();
-  const users = db.users || [];
+  let users = db.users || [];
 
-  const user = users.find(u =>
-    u.email === identifier || u.phone === identifier
+  let user = users.find(u =>
+    u.email?.toLowerCase() === cleanIdentifier.toLowerCase() || u.phone === cleanIdentifier
   );
+
+  // If not found in cache, query Supabase directly
+  if (!user && isSupabaseConfigured()) {
+    try {
+      const client = getSupabaseClient();
+      if (client) {
+        const { data } = await client.from('users').select('*').or(`email.ilike.${cleanIdentifier},phone.eq.${cleanIdentifier}`).limit(1);
+        if (data && data.length > 0) {
+          user = fromDbRecord(data[0]);
+          if (!db.users) db.users = [];
+          const idx = db.users.findIndex(u => u.id === user.id);
+          if (idx >= 0) db.users[idx] = user;
+          else db.users.push(user);
+        }
+      }
+    } catch (err) {
+      console.error('Supabase live user lookup error:', err.message);
+    }
+  }
+
   if (!user) throw new Error('Invalid credentials');
   if (!user.isActive) throw new Error('Account is deactivated');
 
@@ -87,38 +108,42 @@ export function getDefaultPermissions(role) {
       calls: { read: true, log: true },
     },
     manager: {
-      leads: { read: true, create: true, update: true, delete: false },
-      projects: { read: true, create: false, update: true, delete: false },
+      leads: { read: true, create: true, update: true, delete: true },
+      projects: { read: true, create: true, update: true, delete: true },
       pipeline: { read: true, update: true },
-      partners: { read: true, create: true, update: true, delete: false },
+      partners: { read: true, create: true, update: true, delete: true },
+      tasks: { read: true, create: true, update: true, delete: true },
       reports: { read: true },
       analytics: { read: true },
-      settings: { read: true, update: false },
-      users: { read: true, create: false, update: false, delete: false },
+      settings: { read: true, update: true },
+      users: { read: false, create: false, update: false, delete: false }, // No user management
       documents: { read: true, create: true, update: true },
       bookings: { read: true, update: true },
       whatsapp: { read: true, send: true },
       calls: { read: true, log: true },
     },
     agent: {
-      leads: { read: true, create: true, update: true, delete: false },
+      leads: { read: true, create: true, update: true, delete: false }, // Only own assigned leads
       projects: { read: true, create: false, update: false, delete: false },
-      pipeline: { read: true, update: true },
+      pipeline: { read: true, update: true }, // Only own assigned leads
       partners: { read: true, create: false, update: false, delete: false },
-      reports: { read: false },
-      analytics: { read: false },
-      settings: { read: false, update: false },
-      users: { read: false, create: false, update: false, delete: false },
+      tasks: { read: true, create: true, update: true, delete: false },
+      reports: { read: false }, // No reports
+      analytics: { read: false }, // No analytics
+      settings: { read: false, update: false }, // No settings
+      users: { read: false, create: false, update: false, delete: false }, // No users
       documents: { read: true, create: true, update: false },
       bookings: { read: false, update: false },
       whatsapp: { read: true, send: true },
       calls: { read: true, log: true },
     },
     viewer: {
+      // Read-only access. Cannot create/update/delete anything.
       leads: { read: true, create: false, update: false, delete: false },
       projects: { read: true, create: false, update: false, delete: false },
       pipeline: { read: true, update: false },
       partners: { read: true, create: false, update: false, delete: false },
+      tasks: { read: true, create: false, update: false, delete: false },
       reports: { read: true },
       analytics: { read: true },
       settings: { read: false, update: false },

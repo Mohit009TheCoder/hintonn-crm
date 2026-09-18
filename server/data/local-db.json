@@ -1,0 +1,600 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Rohan Mehta",
+      "email": "rohan@ashraygroup.in",
+      "phone": "+919825000001",
+      "role": "admin",
+      "isActive": true,
+      "companyId": "ashray-group",
+      "passwordHash": "$2b$10$wM/toF5jd/Je5fJR8djA.u4u7enQxcY3mp2wspstXbK4CH9njhcbK",
+      "permissions": {
+        "leads": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": true
+        },
+        "projects": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": true
+        },
+        "pipeline": {
+          "read": true,
+          "update": true
+        },
+        "partners": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": true
+        },
+        "reports": {
+          "read": true
+        },
+        "analytics": {
+          "read": true
+        },
+        "settings": {
+          "read": true,
+          "update": true
+        },
+        "users": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": true
+        },
+        "documents": {
+          "read": true,
+          "create": true,
+          "update": true
+        },
+        "bookings": {
+          "read": true,
+          "update": true
+        },
+        "whatsapp": {
+          "read": true,
+          "send": true
+        },
+        "calls": {
+          "read": true,
+          "log": true
+        }
+      },
+      "createdAt": "2026-09-18T15:59:13.886Z",
+      "lastLogin": null,
+      "avatar": null
+    },
+    {
+      "id": 2,
+      "name": "Ananya Iyer",
+      "email": "ananya@ashraygroup.in",
+      "phone": "+919825000002",
+      "role": "manager",
+      "isActive": true,
+      "companyId": "ashray-group",
+      "passwordHash": "$2b$10$wM/toF5jd/Je5fJR8djA.u4u7enQxcY3mp2wspstXbK4CH9njhcbK",
+      "permissions": {
+        "leads": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": true
+        },
+        "projects": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": true
+        },
+        "pipeline": {
+          "read": true,
+          "update": true
+        },
+        "partners": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": true
+        },
+        "tasks": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": true
+        },
+        "reports": {
+          "read": true
+        },
+        "analytics": {
+          "read": true
+        },
+        "settings": {
+          "read": true,
+          "update": true
+        },
+        "users": {
+          "read": false,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "documents": {
+          "read": true,
+          "create": true,
+          "update": true
+        },
+        "bookings": {
+          "read": true,
+          "update": true
+        },
+        "whatsapp": {
+          "read": true,
+          "send": true
+        },
+        "calls": {
+          "read": true,
+          "log": true
+        }
+      },
+      "createdAt": "2026-09-18T15:59:13.887Z",
+      "lastLogin": null,
+      "avatar": null
+    },
+    {
+      "id": 3,
+      "name": "Karan Thakkar",
+      "email": "karan@ashraygroup.in",
+      "phone": "+919825000003",
+      "role": "agent",
+      "isActive": true,
+      "companyId": "ashray-group",
+      "passwordHash": "$2b$10$wM/toF5jd/Je5fJR8djA.u4u7enQxcY3mp2wspstXbK4CH9njhcbK",
+      "permissions": {
+        "leads": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": false
+        },
+        "projects": {
+          "read": true,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "pipeline": {
+          "read": true,
+          "update": true
+        },
+        "partners": {
+          "read": true,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "tasks": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": false
+        },
+        "reports": {
+          "read": false
+        },
+        "analytics": {
+          "read": false
+        },
+        "settings": {
+          "read": false,
+          "update": false
+        },
+        "users": {
+          "read": false,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "documents": {
+          "read": true,
+          "create": true,
+          "update": false
+        },
+        "bookings": {
+          "read": false,
+          "update": false
+        },
+        "whatsapp": {
+          "read": true,
+          "send": true
+        },
+        "calls": {
+          "read": true,
+          "log": true
+        }
+      },
+      "createdAt": "2026-09-18T15:59:13.887Z",
+      "lastLogin": null,
+      "avatar": null
+    },
+    {
+      "id": 4,
+      "name": "Simran Kaur",
+      "email": "simran@ashraygroup.in",
+      "phone": "+919825000004",
+      "role": "agent",
+      "isActive": true,
+      "companyId": "ashray-group",
+      "passwordHash": "$2b$10$wM/toF5jd/Je5fJR8djA.u4u7enQxcY3mp2wspstXbK4CH9njhcbK",
+      "permissions": {
+        "leads": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": false
+        },
+        "projects": {
+          "read": true,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "pipeline": {
+          "read": true,
+          "update": true
+        },
+        "partners": {
+          "read": true,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "tasks": {
+          "read": true,
+          "create": true,
+          "update": true,
+          "delete": false
+        },
+        "reports": {
+          "read": false
+        },
+        "analytics": {
+          "read": false
+        },
+        "settings": {
+          "read": false,
+          "update": false
+        },
+        "users": {
+          "read": false,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "documents": {
+          "read": true,
+          "create": true,
+          "update": false
+        },
+        "bookings": {
+          "read": false,
+          "update": false
+        },
+        "whatsapp": {
+          "read": true,
+          "send": true
+        },
+        "calls": {
+          "read": true,
+          "log": true
+        }
+      },
+      "createdAt": "2026-09-18T15:59:13.887Z",
+      "lastLogin": null,
+      "avatar": null
+    },
+    {
+      "id": 5,
+      "name": "Devika Shah",
+      "email": "devika@ashraygroup.in",
+      "phone": "+919825000005",
+      "role": "viewer",
+      "isActive": true,
+      "companyId": "ashray-group",
+      "passwordHash": "$2b$10$wM/toF5jd/Je5fJR8djA.u4u7enQxcY3mp2wspstXbK4CH9njhcbK",
+      "permissions": {
+        "leads": {
+          "read": true,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "projects": {
+          "read": true,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "pipeline": {
+          "read": true,
+          "update": false
+        },
+        "partners": {
+          "read": true,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "tasks": {
+          "read": true,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "reports": {
+          "read": true
+        },
+        "analytics": {
+          "read": true
+        },
+        "settings": {
+          "read": false,
+          "update": false
+        },
+        "users": {
+          "read": false,
+          "create": false,
+          "update": false,
+          "delete": false
+        },
+        "documents": {
+          "read": true,
+          "create": false,
+          "update": false
+        },
+        "bookings": {
+          "read": true,
+          "update": false
+        },
+        "whatsapp": {
+          "read": true,
+          "send": false
+        },
+        "calls": {
+          "read": true,
+          "log": false
+        }
+      },
+      "createdAt": "2026-09-18T15:59:13.887Z",
+      "lastLogin": null,
+      "avatar": null
+    }
+  ],
+  "stages": [
+    {
+      "id": "new",
+      "name": "New"
+    },
+    {
+      "id": "contacted",
+      "name": "Contacted"
+    },
+    {
+      "id": "qualified",
+      "name": "Qualified"
+    },
+    {
+      "id": "negotiation",
+      "name": "Negotiation"
+    },
+    {
+      "id": "won",
+      "name": "Won"
+    },
+    {
+      "id": "lost",
+      "name": "Lost"
+    }
+  ],
+  "leadSources": [
+    {
+      "id": 1,
+      "name": "Instagram",
+      "icon": "instagram",
+      "color": "#E1306C",
+      "webhookUrl": "/api/lead-capture/webhook",
+      "costPerLead": 45,
+      "active": true,
+      "category": "social"
+    },
+    {
+      "id": 2,
+      "name": "Facebook",
+      "icon": "facebook",
+      "color": "#1877F2",
+      "webhookUrl": "/api/lead-capture/webhook",
+      "costPerLead": 40,
+      "active": true,
+      "category": "social"
+    },
+    {
+      "id": 3,
+      "name": "WhatsApp",
+      "icon": "message-circle",
+      "color": "#25D366",
+      "webhookUrl": "/api/lead-capture/webhook",
+      "costPerLead": 5,
+      "active": true,
+      "category": "messaging"
+    },
+    {
+      "id": 4,
+      "name": "Google Ads",
+      "icon": "search",
+      "color": "#4285F4",
+      "webhookUrl": "/api/lead-capture/webhook",
+      "costPerLead": 60,
+      "active": true,
+      "category": "paid"
+    },
+    {
+      "id": 5,
+      "name": "99acres",
+      "icon": "home",
+      "color": "#FF6600",
+      "webhookUrl": "/api/lead-capture/webhook",
+      "costPerLead": 35,
+      "active": true,
+      "category": "portal"
+    },
+    {
+      "id": 6,
+      "name": "MagicBricks",
+      "icon": "building",
+      "color": "#0066CC",
+      "webhookUrl": "/api/lead-capture/webhook",
+      "costPerLead": 35,
+      "active": true,
+      "category": "portal"
+    },
+    {
+      "id": 7,
+      "name": "Housing.com",
+      "icon": "building-2",
+      "color": "#00A699",
+      "webhookUrl": "/api/lead-capture/webhook",
+      "costPerLead": 30,
+      "active": true,
+      "category": "portal"
+    },
+    {
+      "id": 8,
+      "name": "Website",
+      "icon": "globe",
+      "color": "#6366F1",
+      "webhookUrl": "/api/lead-capture/webhook",
+      "costPerLead": 10,
+      "active": true,
+      "category": "organic"
+    },
+    {
+      "id": 9,
+      "name": "Walk-in",
+      "icon": "footprints",
+      "color": "#10B981",
+      "webhookUrl": null,
+      "costPerLead": 0,
+      "active": true,
+      "category": "offline"
+    },
+    {
+      "id": 10,
+      "name": "Call-in",
+      "icon": "phone",
+      "color": "#F59E0B",
+      "webhookUrl": null,
+      "costPerLead": 0,
+      "active": true,
+      "category": "offline"
+    },
+    {
+      "id": 11,
+      "name": "Referral",
+      "icon": "users",
+      "color": "#8B5CF6",
+      "webhookUrl": null,
+      "costPerLead": 0,
+      "active": true,
+      "category": "organic"
+    }
+  ],
+  "team": [
+    {
+      "id": 1,
+      "name": "Rohan Mehta",
+      "role": "Sales Head",
+      "email": "rohan@ashraygroup.in",
+      "phone": "+91 98250 00001",
+      "leadsCount": 0
+    },
+    {
+      "id": 2,
+      "name": "Ananya Iyer",
+      "role": "Senior Consultant",
+      "email": "ananya@ashraygroup.in",
+      "phone": "+91 98250 00002",
+      "leadsCount": 0
+    },
+    {
+      "id": 3,
+      "name": "Karan Thakkar",
+      "role": "Luxury Specialist",
+      "email": "karan@ashraygroup.in",
+      "phone": "+91 98250 00003",
+      "leadsCount": 0
+    },
+    {
+      "id": 4,
+      "name": "Simran Kaur",
+      "role": "Sales Executive",
+      "email": "simran@ashraygroup.in",
+      "phone": "+91 98250 00004",
+      "leadsCount": 0
+    },
+    {
+      "id": 5,
+      "name": "Devika Shah",
+      "role": "Associate",
+      "email": "devika@ashraygroup.in",
+      "phone": "+91 98250 00005",
+      "leadsCount": 0
+    }
+  ],
+  "settings": {
+    "company": {
+      "name": "Ashray Group Real Estate",
+      "brandName": "Hintonn AI",
+      "website": "https://ashraygroup.in",
+      "phone": "+91 79 4000 1234",
+      "address": "Ashray House, SG Highway, Ahmedabad, Gujarat 380054"
+    },
+    "whatsapp": {
+      "status": "connected",
+      "wabaId": "WABA-99281-IN",
+      "phoneNumber": "+91 98250 99000",
+      "qualityScore": "High (Green)",
+      "dailyLimit": "10,000 conversations/day",
+      "webhookStatus": "Active (200 OK)"
+    },
+    "sla": {
+      "firstResponseMinutes": 15,
+      "firstNudgeHours": 24,
+      "cadenceHours": 12,
+      "autoAssignMethod": "Round Robin"
+    }
+  },
+  "simulation": {
+    "simulatedHour": 0,
+    "logs": []
+  },
+  "contacts": [],
+  "projects": [],
+  "calls": [],
+  "partners": [],
+  "tasks": [],
+  "siteVisits": [],
+  "broadcasts": [],
+  "sequences": [],
+  "brochures": [],
+  "notifications": [],
+  "nurtureSequences": [],
+  "nurtureLog": [],
+  "slaAlerts": [],
+  "leadActivities": [],
+  "paymentMilestones": []
+}

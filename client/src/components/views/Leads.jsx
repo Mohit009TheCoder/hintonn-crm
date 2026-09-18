@@ -37,8 +37,13 @@ const SOURCE_LABELS = {
 };
 
 export default function Leads({ onSelectLead, onOpenDialer, onOpenAddLead }) {
-  const { leads, projects, autoUpdateAllStages, triggerManualNurtureStep } = useCRM();
+  const { leads, duplicateLeads, projects, autoUpdateAllStages, triggerManualNurtureStep, fetchDuplicateLeads } = useCRM();
 
+  React.useEffect(() => {
+    if (fetchDuplicateLeads) fetchDuplicateLeads();
+  }, [fetchDuplicateLeads]);
+
+  const [activeTab, setActiveTab] = React.useState('main'); // 'main' or 'duplicates'
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('all');
   const [activeStage, setActiveStage] = useState('all');
@@ -177,6 +182,28 @@ export default function Leads({ onSelectLead, onOpenDialer, onOpenAddLead }) {
           </div>
         </div>
 
+        <div className="flex items-center gap-2 bg-[#F1F5F9] p-1 rounded-[12px] border border-[#E2E8F0]">
+          <button
+            onClick={() => setActiveTab('main')}
+            className={`px-4 py-2 rounded-[8px] text-[13px] font-semibold transition-all ${
+              activeTab === 'main' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'
+            }`}
+          >
+            Main Database
+          </button>
+          <button
+            onClick={() => setActiveTab('duplicates')}
+            className={`px-4 py-2 rounded-[8px] text-[13px] font-semibold transition-all flex items-center gap-2 ${
+              activeTab === 'duplicates' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'
+            }`}
+          >
+            Duplicates Queue
+            {(duplicateLeads?.length || 0) > 0 && (
+              <span className="bg-[#DC2626] text-white text-[10px] px-1.5 py-0.5 rounded-full">{duplicateLeads.length}</span>
+            )}
+          </button>
+        </div>
+
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => autoUpdateAllStages(false)}
@@ -197,7 +224,43 @@ export default function Leads({ onSelectLead, onOpenDialer, onOpenAddLead }) {
         </div>
       </div>
 
-      {/* Smart List Chips */}
+      {activeTab === 'duplicates' ? (
+        <div className="bg-white border border-[#E2E8F0] rounded-[16px] overflow-hidden">
+          <div className="p-5 border-b border-[#E2E8F0]">
+            <h3 className="font-display font-bold text-[16px]">Filtered Duplicates</h3>
+            <p className="text-[13px] text-[#64748B]">Leads matching existing phone numbers caught by the system.</p>
+          </div>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[12px] font-semibold text-[#64748B]">
+                <th className="p-4">Name</th>
+                <th className="p-4">Contact</th>
+                <th className="p-4">Source</th>
+                <th className="p-4">Message</th>
+                <th className="p-4">Captured</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E2E8F0] text-[13px]">
+              {!duplicateLeads || duplicateLeads.length === 0 ? (
+                <tr><td colSpan="5" className="p-8 text-center text-[#94A3B8]">No duplicates captured yet.</td></tr>
+              ) : duplicateLeads.map(d => (
+                <tr key={d.id} className="hover:bg-[#F8FAFC]">
+                  <td className="p-4 font-semibold">{d.name}</td>
+                  <td className="p-4">
+                    <div>{d.phone}</div>
+                    <div className="text-[11px] text-[#94A3B8]">{d.email}</div>
+                  </td>
+                  <td className="p-4">{d.source}</td>
+                  <td className="p-4 text-[#64748B] max-w-[200px] truncate" title={d.message}>{d.message || '—'}</td>
+                  <td className="p-4 text-[#64748B]">{new Date(d.createdAt || d.created_at).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <>
+          {/* Smart List Chips */}
       <div className="flex gap-2 flex-wrap items-center">
         {smartListChips.map(chip => (
           <button
@@ -467,8 +530,10 @@ export default function Leads({ onSelectLead, onOpenDialer, onOpenAddLead }) {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
