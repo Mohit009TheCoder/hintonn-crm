@@ -498,44 +498,12 @@ export function deleteItem(collectionName, id) {
 export async function saveDb() {
   if (!cache) return;
 
+  // Only save to local file — Supabase sync happens per-record in insertItem/updateItem/deleteItem
   if (useLocalMode || !isSupabaseConfigured()) {
     saveLocalDbFile();
     return;
   }
 
-  // Fire-and-forget sync to Supabase for bulk updates
-  const client = getSupabaseClient();
-  const promises = [];
-
-  for (const colName of COLLECTIONS) {
-    const items = cache[colName];
-    if (!Array.isArray(items) || items.length === 0) continue;
-    const tableName = TABLE_MAP[colName] || camelToSnake(colName);
-    // Strip unknown columns from all records
-    const rawRecords = items.map(toDbRecord);
-    promises.push(
-      Promise.all(rawRecords.map(r => stripToKnownColumns(client, tableName, r)))
-        .then(records => client.from(tableName).upsert(records, { onConflict: 'id' }))
-        .then(({ error }) => {
-          if (error) console.error(`saveDb sync ${tableName} error:`, error.message);
-        })
-    );
-  }
-
-  for (const key of SINGLETON_KEYS) {
-    if (cache[key]) {
-      promises.push(
-        client.from('app_settings').upsert({
-          key,
-          data: cache[key],
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'key' })
-          .then(({ error }) => {
-            if (error) console.error(`saveDb singleton ${key} error:`, error.message);
-          })
-      );
-    }
-  }
-
-  Promise.all(promises).catch(err => console.error('saveDb error:', err.message));
+  // Supabase mode: no bulk sync needed (individual ops already persist)
+  // This prevents stale cache from overwriting deleted data
 }
