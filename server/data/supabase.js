@@ -443,6 +443,42 @@ export function insertItem(collectionName, item) {
   return newItem;
 }
 
+export async function asyncInsertItem(collectionName, item) {
+  const c = getDb();
+  if (!c[collectionName]) c[collectionName] = [];
+
+  let newItem = { ...item, createdAt: new Date().toISOString() };
+
+  if (!useLocalMode && isSupabaseConfigured()) {
+    const client = getSupabaseClient();
+    const tableName = TABLE_MAP[collectionName] || camelToSnake(collectionName);
+    const rawRecord = toDbRecord(newItem);
+    
+    // Remove ID so Supabase sequence generates it
+    delete rawRecord.id;
+
+    const record = await stripToKnownColumns(client, tableName, rawRecord);
+    const { data, error } = await client.from(tableName).insert([record]).select();
+
+    if (error) {
+      console.error(`Supabase asyncInsertItem ${tableName} error:`, error.message);
+      throw new Error(error.message);
+    }
+
+    newItem = fromDbRecord(data[0]);
+    c[collectionName].unshift(newItem);
+    return newItem;
+  } else {
+    const nextId = c[collectionName].length > 0
+      ? Math.max(...c[collectionName].map(i => Number(i.id) || 0)) + 1
+      : 1;
+    newItem.id = nextId;
+    c[collectionName].unshift(newItem);
+    saveLocalDbFile();
+    return newItem;
+  }
+}
+
 export function updateItem(collectionName, id, patch) {
   const c = getDb();
   const list = c[collectionName] || [];

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCollection, insertItem, updateItem, deleteItem, getDb, saveDb } from '../data/db.js';
+import { getCollection, insertItem, asyncInsertItem, updateItem, deleteItem, getDb, saveDb } from '../data/db.js';
 import { triggerWelcomeMessage, triggerStageChange } from '../data/automation.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateLead, validateId } from '../middleware/validate.js';
@@ -77,7 +77,7 @@ router.get('/:id', authorize('leads', 'read'), (req, res) => {
   res.json({ success: true, data: lead });
 });
 
-router.post('/', authorize('leads', 'create'), validateLead, (req, res) => {
+router.post('/', authorize('leads', 'create'), validateLead, async (req, res) => {
   const { name, phone, email, source, projectId, config, value, stage, rep, tags, preferences } = req.body;
   if (!name || !phone) {
     return res.status(400).json({ success: false, message: 'Name and phone are required' });
@@ -99,6 +99,7 @@ router.post('/', authorize('leads', 'create'), validateLead, (req, res) => {
   });
 
   const initialScore = Math.floor(Math.random() * 35) + 50; // 50-85
+
   const newLead = {
     name,
     phone,
@@ -111,7 +112,7 @@ router.post('/', authorize('leads', 'create'), validateLead, (req, res) => {
     createdMinutesAgo: 0,
     reminderHoursAgo: 0,
     rep: assignedRep,
-    score: initialScore,
+    score: dup ? Math.max(0, (initialScore || 50) - 10) : (initialScore || 50),
     duplicateOf: dup ? dup.id : null,
     tags: tags || ['hot-lead'],
     notes: [
@@ -131,14 +132,19 @@ router.post('/', authorize('leads', 'create'), validateLead, (req, res) => {
     ]
   };
 
-  const saved = insertItem('contacts', newLead);
+  try {
+    const saved = await asyncInsertItem('contacts', newLead);
 
-  // Trigger WhatsApp welcome automation (fire-and-forget)
-  triggerWelcomeMessage(saved).catch(err =>
-    console.error('Welcome automation error:', err.message)
-  );
+    // Trigger WhatsApp welcome automation
+    triggerWelcomeMessage(saved).catch(err =>
+      console.error('Welcome automation error:', err.message)
+    );
 
-  res.status(201).json({ success: true, data: saved, isDuplicate: !!dup });
+    res.status(201).json({ success: true, data: saved, isDuplicate: !!dup });
+  } catch (error) {
+    console.error('Failed to create lead:', error);
+    res.status(500).json({ success: false, error: 'Failed to save lead to database' });
+  }
 });
 
 router.put('/:id', authorize('leads', 'update'), validateId, (req, res) => {

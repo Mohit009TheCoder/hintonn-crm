@@ -74,7 +74,7 @@ export const validateSiteVisit = [
 // ── WhatsApp message validation ──────────────────────────────────────────────
 export const validateWhatsAppMessage = [
   body('contactId').notEmpty().withMessage('Contact ID is required'),
-  body('message').trim().notEmpty().withMessage('Message is required').isLength({ max: 4096 }).withMessage('Message too long (max 4096 chars)'),
+  body('text').trim().notEmpty().withMessage('Message text is required').isLength({ max: 4096 }).withMessage('Message too long (max 4096 chars)'),
   validate,
 ];
 

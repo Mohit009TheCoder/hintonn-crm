@@ -2,6 +2,7 @@ import express from 'express';
 import { getDb, saveDb, insertItem } from '../data/db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateWhatsAppMessage } from '../middleware/validate.js';
+import { sendViaWhatsApp } from '../data/automation.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -32,7 +33,7 @@ router.get('/threads/:contactId', authorize('whatsapp', 'read'), (req, res) => {
   });
 });
 
-router.post('/send', authorize('whatsapp', 'send'), validateWhatsAppMessage, (req, res) => {
+router.post('/send', authorize('whatsapp', 'send'), validateWhatsAppMessage, async (req, res) => {
   const { contactId, text } = req.body;
   if (!contactId || !text) {
     return res.status(400).json({ success: false, message: 'contactId and text are required' });
@@ -42,12 +43,21 @@ router.post('/send', authorize('whatsapp', 'send'), validateWhatsAppMessage, (re
   const contact = db.contacts.find(c => Number(c.id) === Number(contactId));
   if (!contact) return res.status(404).json({ success: false, message: 'Contact not found' });
 
+  // Actually send via Meta WhatsApp API
+  const waResult = await sendViaWhatsApp({
+    phone: contact.phone,
+    message: text,
+    lead: contact,
+  });
+
   if (!contact.waLog) contact.waLog = [];
   const newMsg = {
     id: contact.waLog.length + 1,
     text,
     time: 'Just now',
-    dir: 'out'
+    dir: 'out',
+    metaMessageId: waResult.success ? waResult.messageId : null,
+    sentAt: new Date().toISOString(),
   };
   contact.waLog.push(newMsg);
 
@@ -75,7 +85,7 @@ router.post('/send', authorize('whatsapp', 'send'), validateWhatsAppMessage, (re
   }
 
   saveDb();
-  res.json({ success: true, data: newMsg, stageChanged, currentStage: contact.stage });
+  res.json({ success: true, data: newMsg, stageChanged, currentStage: contact.stage, metaSent: waResult.success, metaMessageId: waResult.messageId || null });
 });
 
 router.get('/broadcasts', authorize('whatsapp', 'read'), (req, res) => {
