@@ -31,6 +31,7 @@ export default function Sidebar({ currentView, onViewChange, isOpen, onClose }) 
     { id: 'projects', label: 'Projects', icon: 'building' },
     { id: 'automations', label: 'Automations', icon: 'zap', isAi: true },
     { id: 'whatsapp', label: 'WhatsApp & Nurture', icon: 'messagecircle', isAi: true },
+    { id: 'reminders', label: 'Reminders', icon: 'bell' },
     { id: 'calls', label: 'Calls', icon: 'headphones' },
     { id: 'partners', label: 'Channel Partners', icon: 'share2' }
   ];

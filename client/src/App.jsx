@@ -22,6 +22,7 @@ import LeadCaptureView from './components/views/LeadCaptureView';
 import LeadNurtureView from './components/views/LeadNurtureView';
 import PostBookingView from './components/views/PostBookingView';
 import TeamAnalyticsView from './components/views/TeamAnalyticsView';
+import ReminderDashboard from './components/views/ReminderDashboard';
 
 // Modals
 import LeadDrawer from './components/modals/LeadDrawer';
@@ -179,6 +180,10 @@ export default function App() {
 
           {currentView === 'nurture' && (
             <LeadNurtureView onSelectLead={(id) => setActiveDrawerLeadId(id)} />
+          )}
+
+          {currentView === 'reminders' && (
+            <ReminderDashboard onSelectLead={(id) => setActiveDrawerLeadId(id)} />
           )}
 
           {/* Post-booking & team analytics: restricted from agent */}
