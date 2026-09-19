@@ -103,7 +103,7 @@ export default function WhatsAppView() {
           WhatsApp &amp; Automation Engine
         </div>
         <div className="text-[#64748B] text-[14px] mt-0.5 max-w-[700px]">
-          Automated nurture campaigns, n8n webhook integration, and stage-aware reminder cadences.
+          Automated nurture campaigns, direct Meta API integration, and stage-aware reminder cadences.
         </div>
       </div>
 
@@ -111,10 +111,10 @@ export default function WhatsAppView() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {[
           {
-            label: 'n8n Connection',
-            value: automationStatus?.n8nReachable ? 'Connected' : 'Disconnected',
-            color: automationStatus?.n8nReachable ? 'text-[#059669]' : 'text-[#DC2626]',
-            bg: automationStatus?.n8nReachable ? 'bg-[#D1FAE5]' : 'bg-[#FEE2E2]',
+            label: 'WhatsApp API',
+            value: automationStatus?.configured ? 'Connected' : 'Disconnected',
+            color: automationStatus?.configured ? 'text-[#059669]' : 'text-[#DC2626]',
+            bg: automationStatus?.configured ? 'bg-[#D1FAE5]' : 'bg-[#FEE2E2]',
             icon: 'zap'
           },
           {
@@ -151,27 +151,28 @@ export default function WhatsAppView() {
         ))}
       </div>
 
-      {/* n8n Webhook Info */}
+      {/* Meta API Info */}
       <div className="card-base bg-white border border-[#E2E8F0] rounded-[16px] p-5 flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center ${automationStatus?.n8nReachable ? 'bg-[#D1FAE5] text-[#059669]' : 'bg-[#FEE2E2] text-[#DC2626]'}`}>
+          <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center ${automationStatus?.configured ? 'bg-[#D1FAE5] text-[#059669]' : 'bg-[#FEE2E2] text-[#DC2626]'}`}>
             <Icon name="zap" size={20} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[14px] text-[#0F172A]">n8n Webhook Integration</span>
-              <span className={`tag-pill text-[10px] ${automationStatus?.n8nReachable ? 'bg-[#D1FAE5] text-[#047857]' : 'bg-[#FEE2E2] text-[#DC2626]'}`}>
-                {automationStatus?.n8nReachable ? 'ACTIVE' : 'OFFLINE'}
+              <span className="font-bold text-[14px] text-[#0F172A]">Meta Cloud API Integration</span>
+              <span className={`tag-pill text-[10px] ${automationStatus?.configured ? 'bg-[#D1FAE5] text-[#047857]' : 'bg-[#FEE2E2] text-[#DC2626]'}`}>
+                {automationStatus?.configured ? 'ACTIVE' : 'OFFLINE'}
               </span>
             </div>
             <div className="text-[11.8px] text-[#64748B]">
-              URL: {automationStatus?.webhookUrl || 'http://localhost:5678/webhook/crm-whatsapp'}
+              Mode: {automationStatus?.mode === 'direct_meta_api' ? 'Direct Meta API' : 'Unknown'}
+              {automationStatus?.phoneNumberId ? ` · Phone ID: ${automationStatus.phoneNumberId}` : ''}
             </div>
           </div>
         </div>
         <div className="text-right">
-          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${automationStatus?.n8nReachable ? 'text-[#059669] bg-[#D1FAE5]' : 'text-[#DC2626] bg-[#FEE2E2]'}`}>
-            {automationStatus?.n8nReachable ? '● Webhook Active' : '● Start n8n to activate'}
+          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${automationStatus?.configured ? 'text-[#059669] bg-[#D1FAE5]' : 'text-[#DC2626] bg-[#FEE2E2]'}`}>
+            {automationStatus?.configured ? '● Engine Running' : '● Missing API credentials'}
           </span>
         </div>
       </div>

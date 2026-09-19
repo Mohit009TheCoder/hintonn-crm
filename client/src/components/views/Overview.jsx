@@ -92,12 +92,6 @@ export default function Overview({ onOpenAddLead, onSelectLead, onViewChange }) 
       spark: convRate > 0 ? [0, convRate] : [0, 0, 0, 0]
     },
     {
-      label: 'Reminders sent',
-      val: String(remindersSentCount),
-      delta: 'live',
-      spark: remindersSentCount > 0 ? [0, 1, remindersSentCount] : [0, 0, 0, 0]
-    },
-    {
       label: 'Tasks due today',
       val: String(tasksDueToday),
       delta: 'live',
