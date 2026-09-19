@@ -1,6 +1,7 @@
 import express from 'express';
 import { getDb, saveDb, insertItem } from '../data/db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { validateWhatsAppMessage } from '../middleware/validate.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -31,7 +32,7 @@ router.get('/threads/:contactId', authorize('whatsapp', 'read'), (req, res) => {
   });
 });
 
-router.post('/send', authorize('whatsapp', 'send'), (req, res) => {
+router.post('/send', authorize('whatsapp', 'send'), validateWhatsAppMessage, (req, res) => {
   const { contactId, text } = req.body;
   if (!contactId || !text) {
     return res.status(400).json({ success: false, message: 'contactId and text are required' });

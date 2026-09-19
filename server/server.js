@@ -214,6 +214,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// ── Global error handler — never leak stack traces in production ─────────────
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  const message = process.env.NODE_ENV === 'production'
+    ? (status === 500 ? 'Internal server error' : err.message)
+    : err.message;
+
+  if (status >= 500) {
+    console.error('Server error:', err.message);
+  }
+
+  res.status(status).json({ success: false, message });
+});
+
 // Boot: initialize database engine, then start listening
 let server; // reference for graceful shutdown
 

@@ -1,6 +1,7 @@
 import express from 'express';
 import { getCollection, insertItem, updateItem } from '../data/db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { validatePartner } from '../middleware/validate.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -25,7 +26,7 @@ router.get('/', authorize('partners', 'read'), (req, res) => {
   });
 });
 
-router.post('/', authorize('partners', 'create'), (req, res) => {
+router.post('/', authorize('partners', 'create'), validatePartner, (req, res) => {
   const { name, company, phone, email, type, commissionRate } = req.body;
   if (!name || !company) {
     return res.status(400).json({ success: false, message: 'Name and company are required' });

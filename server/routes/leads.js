@@ -2,6 +2,7 @@ import express from 'express';
 import { getCollection, insertItem, updateItem, deleteItem, getDb, saveDb } from '../data/db.js';
 import { triggerWelcomeMessage, triggerStageChange } from '../data/automation.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { validateLead, validateId } from '../middleware/validate.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -76,7 +77,7 @@ router.get('/:id', authorize('leads', 'read'), (req, res) => {
   res.json({ success: true, data: lead });
 });
 
-router.post('/', authorize('leads', 'create'), (req, res) => {
+router.post('/', authorize('leads', 'create'), validateLead, (req, res) => {
   const { name, phone, email, source, projectId, config, value, stage, rep, tags, preferences } = req.body;
   if (!name || !phone) {
     return res.status(400).json({ success: false, message: 'Name and phone are required' });
@@ -140,7 +141,7 @@ router.post('/', authorize('leads', 'create'), (req, res) => {
   res.status(201).json({ success: true, data: saved, isDuplicate: !!dup });
 });
 
-router.put('/:id', authorize('leads', 'update'), (req, res) => {
+router.put('/:id', authorize('leads', 'update'), validateId, (req, res) => {
   const lead = checkLeadAccess(req, res, req.params.id);
   if (!lead) return;
 

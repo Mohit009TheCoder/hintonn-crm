@@ -1,6 +1,7 @@
 import express from 'express';
 import { getDb, saveDb, insertItem } from '../data/db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
+import { validateProject } from '../middleware/validate.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -47,7 +48,7 @@ router.get('/', authorize('projects', 'read'), (req, res) => {
   res.json({ success: true, data: projectsWithStats });
 });
 
-router.post('/', authorize('projects', 'create'), (req, res) => {
+router.post('/', authorize('projects', 'create'), validateProject, (req, res) => {
   const { name, type, loc, configs, priceMin, priceMax, totalUnits, available, possession, units } = req.body;
   if (!name || !loc) {
     return res.status(400).json({ success: false, message: 'Project name and location are required' });
