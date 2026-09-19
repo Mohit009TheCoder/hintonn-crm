@@ -2,6 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import crypto from 'crypto';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { initDb, getDb } from './data/db.js';
 import { startAutomationScheduler, handleWebhookVerification, processInboundWebhook, isWhatsAppConfigured } from './data/automation.js';
 import { checkSLAViolations, applyTemperatureDecay } from './data/leadEngine.js';
@@ -29,9 +32,55 @@ import authRouter from './routes/auth.js';
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
+// ── FIX #1: Helmet security headers ──────────────────────────────────────────
+app.use(helmet());
+
+// ── FIX #2: CORS — restrict to known origins ─────────────────────────────────
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:5001',
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  process.env.CLIENT_ORIGIN,           // set in .env for custom domain
+  'https://hintonn-crm.vercel.app',    // default Vercel domain
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (server-to-server, Postman, curl)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
+  credentials: true,
+}));
+
+// ── FIX #3: Request body size limit ──────────────────────────────────────────
+app.use(express.json({ limit: '1mb' }));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// ── FIX #4: Rate limiting ────────────────────────────────────────────────────
+// General API: 100 requests per minute per IP
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests, please try again later' },
+});
+
+// Auth endpoints: 5 attempts per minute per IP (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts, please try again in 1 minute' },
+});
+
+app.use('/api/auth', authLimiter);
+app.use('/api/', generalLimiter);
 
 // ── WhatsApp Cloud API Webhook (Meta verification + inbound messages) ───────
 // Mounted BEFORE the whatsapp router to bypass auth middleware
@@ -39,7 +88,37 @@ app.get('/api/whatsapp/webhook', (req, res) => {
   handleWebhookVerification(req, res);
 });
 
-app.post('/api/whatsapp/webhook', express.json(), (req, res) => {
+// FIX #7: Meta webhook signature verification
+function verifyMetaSignature(req, res, next) {
+  const signature = req.headers['x-hub-signature-256'];
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+
+  // Skip verification in development if no app secret configured
+  if (!appSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('⚠️  WHATSAPP_APP_SECRET not set — rejecting webhook in production');
+      return res.status(403).json({ error: 'Webhook verification failed' });
+    }
+    return next(); // Dev mode: skip
+  }
+
+  if (!signature) {
+    return res.status(403).json({ error: 'Missing signature' });
+  }
+
+  // Get raw body for HMAC — express.json() already parsed it, so use req.body
+  const bodyStr = JSON.stringify(req.body);
+  const expectedSig = 'sha256=' + crypto.createHmac('sha256', appSecret).update(bodyStr).digest('hex');
+
+  if (signature !== expectedSig) {
+    console.error('❌ Meta webhook signature mismatch');
+    return res.status(403).json({ error: 'Invalid signature' });
+  }
+
+  next();
+}
+
+app.post('/api/whatsapp/webhook', express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }), verifyMetaSignature, (req, res) => {
   try {
     const results = processInboundWebhook(req.body);
     if (results.length > 0) {
@@ -136,9 +215,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // Boot: initialize database engine, then start listening
+let server; // reference for graceful shutdown
+
 initDb()
   .then(() => {
-    const server = app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`Hintonn CRM API Server running on port ${PORT}`);
       console.log('🚀 Server ready — Database connected');
       if (isWhatsAppConfigured()) {
@@ -199,3 +280,45 @@ initDb()
     console.error('❌ Failed to initialize database:', err.message);
     process.exit(1);
   });
+
+// ── FIX #6: Unhandled error + graceful shutdown ──────────────────────────────
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️  Unhandled Rejection:', reason?.message || reason);
+  // Don't exit — log and continue (the setInterval jobs may recover)
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err.message);
+  console.error(err.stack);
+  // Graceful shutdown on truly broken state
+  if (server) {
+    server.close(() => {
+      console.log('🔒 Server closed due to uncaught exception');
+      process.exit(1);
+    });
+  } else {
+    process.exit(1);
+  }
+});
+
+// Graceful shutdown on SIGTERM (Railway/Vercel sends this on deploy)
+process.on('SIGTERM', () => {
+  console.log('📴 SIGTERM received — shutting down gracefully...');
+  if (server) {
+    server.close(() => {
+      console.log('🔒 Server closed');
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+});
+
+process.on('SIGINT', () => {
+  console.log('📴 SIGINT received — shutting down...');
+  if (server) {
+    server.close(() => process.exit(0));
+  } else {
+    process.exit(0);
+  }
+});
