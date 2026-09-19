@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext';
 
 const CRMContext = createContext(null);
 
-// In production (Vercel), use the Railway backend URL.
+// In production (Vercel), use the same origin
 // In dev, Vite proxies /api/* to localhost:5001 automatically.
 const API_BASE = (typeof __API_URL__ !== 'undefined' && __API_URL__) ? __API_URL__ : '';
 
@@ -14,7 +14,7 @@ export function CRMProvider({ children }) {
 
   const authFetch = useCallback(
     async (url, options = {}) => {
-      // Prepend API_BASE so requests hit Railway in production
+      // Prepend API_BASE so requests hit the correct backend
       const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
       const res = await fetch(fullUrl, {
         ...options,

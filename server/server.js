@@ -315,7 +315,7 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-// Graceful shutdown on SIGTERM (Railway/Vercel sends this on deploy)
+// Graceful shutdown on SIGTERM (Vercel sends this on deploy)
 process.on('SIGTERM', () => {
   console.log('📴 SIGTERM received — shutting down gracefully...');
   if (server) {
@@ -336,3 +336,5 @@ process.on('SIGINT', () => {
     process.exit(0);
   }
 });
+
+export default app;

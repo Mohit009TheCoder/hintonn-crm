@@ -8,7 +8,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://hintonn-crm-api.up.railway.app/api/$1"
+      "destination": "/server/server.js"
     }
   ]
 }
