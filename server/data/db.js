@@ -10,6 +10,7 @@ export {
   saveDb,
   getCollection,
   insertItem,
+  asyncInsertItem,
   updateItem,
   deleteItem,
   initDb,
