@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import { initDb, getDb } from './data/db.js';
-import { startAutomationScheduler, setWebhookUrl } from './data/automation.js';
+import { startAutomationScheduler, handleWebhookVerification, processInboundWebhook, isWhatsAppConfigured } from './data/automation.js';
 import { checkSLAViolations, applyTemperatureDecay } from './data/leadEngine.js';
 import { authenticate } from './middleware/auth.js';
 
@@ -33,6 +33,25 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// ── WhatsApp Cloud API Webhook (Meta verification + inbound messages) ───────
+// Mounted BEFORE the whatsapp router to bypass auth middleware
+app.get('/api/whatsapp/webhook', (req, res) => {
+  handleWebhookVerification(req, res);
+});
+
+app.post('/api/whatsapp/webhook', express.json(), (req, res) => {
+  try {
+    const results = processInboundWebhook(req.body);
+    if (results.length > 0) {
+      console.log(`📩 Processed ${results.length} inbound message(s)`);
+    }
+    res.status(200).json({ status: 'ok' });
+  } catch (err) {
+    console.error('WhatsApp webhook error:', err.message);
+    res.status(200).json({ status: 'ok' }); // Always 200 to Meta
+  }
+});
+
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/leads', leadsRouter);
@@ -52,6 +71,31 @@ app.use('/api/post-booking', postBookingRouter);
 app.use('/api/team-analytics', teamAnalyticsRouter);
 app.use('/api/documents', documentPipelineRouter);
 app.use('/api/site-visit-auto', siteVisitAutoRouter);
+
+// ── WhatsApp API Status (for frontend dashboard) ────────────────────────────
+app.get('/api/whatsapp/status', authenticate, (req, res) => {
+  const db = getDb();
+  const contacts = db.contacts || [];
+  const activeLeads = contacts.filter(c => !['won', 'lost'].includes(c.stage) && !c.automationPaused);
+  const pausedLeads = contacts.filter(c => c.automationPaused);
+  const totalSent = contacts.reduce((sum, c) => sum + (c.automationLog || []).filter(l => l.status === 'sent').length, 0);
+
+  res.json({
+    success: true,
+    data: {
+      configured: isWhatsAppConfigured(),
+      phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || null,
+      apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
+      mode: 'direct_meta_api',
+      webhookUrl: '/api/whatsapp/webhook',
+      verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || null,
+      schedulerRunning: isWhatsAppConfigured(),
+      activeLeads: activeLeads.length,
+      pausedLeads: pausedLeads.length,
+      totalMessagesSent: totalSent,
+    }
+  });
+});
 
 // Global Search endpoint (requires auth)
 app.get('/api/search', authenticate, (req, res) => {
@@ -97,14 +141,16 @@ initDb()
     const server = app.listen(PORT, () => {
       console.log(`Hintonn CRM API Server running on port ${PORT}`);
       console.log('🚀 Server ready — Database connected');
+      if (isWhatsAppConfigured()) {
+        console.log(`📱 WhatsApp Cloud API active (phone: ${process.env.WHATSAPP_PHONE_NUMBER_ID})`);
+        console.log(`🔗 Webhook URL: /api/whatsapp/webhook`);
+        console.log(`🔑 Verify token: ${process.env.WHATSAPP_VERIFY_TOKEN}`);
+      } else {
+        console.log('⚠️  WhatsApp API not configured — set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN');
+      }
     });
 
-    // Set n8n webhook URL from settings or env
-    const db = getDb();
-    const webhookUrl = db.settings?.automation?.n8nWebhookUrl || process.env.N8N_WEBHOOK_URL;
-    if (webhookUrl) setWebhookUrl(webhookUrl);
-
-    // Start the automation scheduler
+    // Start the automation scheduler (Meta WhatsApp API direct)
     startAutomationScheduler();
 
     // Start SLA monitoring (every 5 minutes)

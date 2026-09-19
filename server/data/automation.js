@@ -1,64 +1,52 @@
 /**
  * WhatsApp Automation Engine
- * 
- * Runs on the CRM server. Checks leads every 60 seconds and triggers
- * n8n webhooks to send WhatsApp messages.
- * 
+ *
+ * Runs on the CRM server. Checks leads every 60 seconds and sends
+ * WhatsApp messages directly via the Meta Cloud API.
+ *
  * Flow:
  * 1. Lead created/updated → automation engine checks templates
- * 2. If a message is due → POST to n8n webhook with message + lead data
- * 3. n8n sends WhatsApp via Meta Cloud API
- * 4. n8n POSTs back to /api/whatsapp/automation/callback with delivery status
- * 5. CRM stores message in Firebase + updates lead timeline
+ * 2. If a message is due → send via Meta WhatsApp Cloud API
+ * 3. Message delivery status tracked in lead's automationLog
+ * 4. Inbound messages auto-pause automation for human takeover
  */
 
 import { getDb, saveDb } from '../data/db.js';
 import { getNextMessage, isAutomationActive } from '../data/messageTemplates.js';
-
-// n8n webhook URL (configurable)
-let N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/crm-whatsapp';
+import {
+  isConfigured,
+  sendMessage,
+  sendTextMessage,
+  sendTemplateMessage,
+  handleWebhookVerification,
+  parseInboundWebhook,
+  normalizePhone,
+} from '../data/whatsapp-api.js';
 
 /**
- * Set the n8n webhook URL dynamically (from settings)
+ * Send a message via WhatsApp (direct Meta API)
  */
-export function setWebhookUrl(url) {
-  if (url) N8N_WEBHOOK_URL = url;
-}
+export async function sendViaWhatsApp(payload) {
+  const { phone, message, lead, templateName } = payload;
 
-/**
- * Send a message via n8n webhook
- * @param {object} payload - { leadId, leadName, phone, message, templateId, projectId, stage }
- * @returns {Promise<{success: boolean, error?: string}>}
- */
-export async function sendViaN8n(payload) {
-  try {
-    const response = await fetch(N8N_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: 'send_whatsapp',
-        timestamp: new Date().toISOString(),
-        data: payload
-      })
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      return { success: false, error: `n8n returned ${response.status}: ${text}` };
-    }
-
-    const result = await response.json().catch(() => ({}));
-    return { success: true, ...result };
-  } catch (err) {
-    // n8n not running or unreachable — log but don't crash
-    return { success: false, error: err.message };
+  if (!isConfigured()) {
+    return { success: false, error: 'WhatsApp API not configured — add WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN to .env' };
   }
+
+  const result = await sendMessage(
+    phone,
+    message,
+    lead || null,
+    templateName || 'hello_world'
+  );
+
+  return result;
 }
 
 /**
  * Store a WhatsApp message in the lead's waLog and timeline
  */
-function storeMessage(lead, messageText, direction = 'out', isAuto = true, templateId = null) {
+function storeMessage(lead, messageText, direction = 'out', isAuto = true, templateId = null, messageId = null) {
   if (!lead.waLog) lead.waLog = [];
 
   const msg = {
@@ -70,12 +58,12 @@ function storeMessage(lead, messageText, direction = 'out', isAuto = true, templ
     dir: direction,
     auto: isAuto,
     templateId: templateId,
+    metaMessageId: messageId,
     sentAt: new Date().toISOString()
   };
 
   lead.waLog.push(msg);
 
-  // Add to timeline
   if (!lead.timeline) lead.timeline = [];
   lead.timeline.unshift({
     type: 'whatsapp',
@@ -90,14 +78,15 @@ function storeMessage(lead, messageText, direction = 'out', isAuto = true, templ
 /**
  * Log an automation event
  */
-function logAutomation(lead, templateId, label, status, error = null) {
+function logAutomation(lead, templateId, label, status, error = null, method = null) {
   if (!lead.automationLog) lead.automationLog = [];
 
   lead.automationLog.push({
     templateId,
     label,
-    status, // 'sent', 'failed', 'skipped'
+    status,
     error,
+    method,
     timestamp: new Date().toISOString(),
     stage: lead.stage
   });
@@ -107,7 +96,7 @@ function logAutomation(lead, templateId, label, status, error = null) {
  * Calculate hours since a lead entered its current stage
  */
 function getHoursInStage(lead) {
-  if (!lead.stageEnteredAt) return 999; // Default: treat as old
+  if (!lead.stageEnteredAt) return 999;
   const entered = new Date(lead.stageEnteredAt);
   const now = new Date();
   return (now - entered) / (1000 * 60 * 60);
@@ -124,22 +113,17 @@ export async function processAutomation() {
   const triggered = [];
 
   for (const lead of contacts) {
-    // Skip inactive automation
     if (!isAutomationActive(lead)) continue;
-
-    // Skip if lead has replied recently (pause automation for human takeover)
     if (lead.automationPaused) continue;
 
     const project = (projects || []).find(p => p.id === lead.projectId) || (projects || [])[0] || null;
     const hoursInStage = getHoursInStage(lead);
     const remindersSent = (lead.automationLog || []).filter(l => l.status === 'sent').length;
 
-    // Get next message based on stage + timing
     const nextMsg = getNextMessage(lead, project, hoursInStage, remindersSent);
     if (!nextMsg) continue;
 
-    // Send via n8n webhook
-    const payload = {
+    const result = await sendViaWhatsApp({
       leadId: lead.id,
       leadName: lead.name,
       phone: lead.phone,
@@ -149,25 +133,25 @@ export async function processAutomation() {
       projectId: lead.projectId || null,
       projectName: project?.name || lead.projectName || lead.project || 'Ashray Properties',
       stage: lead.stage,
-      config: lead.config
-    };
-
-    const result = await sendViaN8n(payload);
+      config: lead.config,
+      lead,
+      templateName: nextMsg.templateId,
+    });
 
     if (result.success) {
-      // Store message in lead's waLog
-      storeMessage(lead, nextMsg.text, 'out', true, nextMsg.templateId);
-      logAutomation(lead, nextMsg.templateId, nextMsg.label, 'sent');
+      storeMessage(lead, nextMsg.text, 'out', true, nextMsg.templateId, result.messageId);
+      logAutomation(lead, nextMsg.templateId, nextMsg.label, 'sent', null, result.method);
 
       triggered.push({
         leadId: lead.id,
         leadName: lead.name,
         stage: lead.stage,
         templateId: nextMsg.templateId,
-        label: nextMsg.label
+        label: nextMsg.label,
+        method: result.method,
       });
     } else {
-      logAutomation(lead, nextMsg.templateId, nextMsg.label, 'failed', result.error);
+      logAutomation(lead, nextMsg.templateId, nextMsg.label, 'failed', result.error, result.method);
     }
   }
 
@@ -180,19 +164,17 @@ export async function processAutomation() {
 
 /**
  * Trigger welcome message for a newly created lead
- * Called immediately when a lead is created
  */
 export async function triggerWelcomeMessage(lead) {
   const db = getDb();
   const project = (db.projects || []).find(p => p.id === lead.projectId) || (db.projects || [])[0] || null;
 
-  // Mark stage entry time
   lead.stageEnteredAt = new Date().toISOString();
 
   const firstMsg = getNextMessage(lead, project, 0, 0);
   if (!firstMsg) return null;
 
-  const payload = {
+  const result = await sendViaWhatsApp({
     leadId: lead.id,
     leadName: lead.name,
     phone: lead.phone,
@@ -203,16 +185,16 @@ export async function triggerWelcomeMessage(lead) {
     projectName: project?.name || lead.projectName || lead.project || 'Ashray Properties',
     stage: lead.stage,
     config: lead.config,
-    event: 'lead_created'
-  };
-
-  const result = await sendViaN8n(payload);
+    lead,
+    event: 'lead_created',
+    templateName: firstMsg.templateId,
+  });
 
   if (result.success) {
-    storeMessage(lead, firstMsg.text, 'out', true, firstMsg.templateId);
-    logAutomation(lead, firstMsg.templateId, firstMsg.label, 'sent');
+    storeMessage(lead, firstMsg.text, 'out', true, firstMsg.templateId, result.messageId);
+    logAutomation(lead, firstMsg.templateId, firstMsg.label, 'sent', null, result.method);
   } else {
-    logAutomation(lead, firstMsg.templateId, firstMsg.label, 'failed', result.error);
+    logAutomation(lead, firstMsg.templateId, firstMsg.label, 'failed', result.error, result.method);
   }
 
   saveDb();
@@ -226,17 +208,14 @@ export async function triggerStageChange(lead, oldStage, newStage) {
   const db = getDb();
   const project = (db.projects || []).find(p => p.id === lead.projectId) || (db.projects || [])[0] || null;
 
-  // Update stage entry time
   lead.stageEnteredAt = new Date().toISOString();
 
-  // If won or lost — stop automation
   if (['won', 'lost'].includes(newStage)) {
-    lead.automationPaused = false; // Allow final message
+    lead.automationPaused = false;
 
-    // Send final message (thank you or win-back)
     const finalMsg = getNextMessage(lead, project, 0, 0);
     if (finalMsg) {
-      const payload = {
+      const result = await sendViaWhatsApp({
         leadId: lead.id,
         leadName: lead.name,
         phone: lead.phone,
@@ -247,15 +226,13 @@ export async function triggerStageChange(lead, oldStage, newStage) {
         projectName: project?.name || lead.projectName || lead.project || 'Ashray Properties',
         stage: newStage,
         config: lead.config,
+        lead,
         event: 'stage_change',
-        oldStage,
-        newStage
-      };
-
-      const result = await sendViaN8n(payload);
+        templateName: finalMsg.templateId,
+      });
       if (result.success) {
-        storeMessage(lead, finalMsg.text, 'out', true, finalMsg.templateId);
-        logAutomation(lead, finalMsg.templateId, finalMsg.label, 'sent');
+        storeMessage(lead, finalMsg.text, 'out', true, finalMsg.templateId, result.messageId);
+        logAutomation(lead, finalMsg.templateId, finalMsg.label, 'sent', null, result.method);
       }
     }
 
@@ -263,10 +240,9 @@ export async function triggerStageChange(lead, oldStage, newStage) {
     return;
   }
 
-  // For other stage changes — send stage-entry message
   const stageMsg = getNextMessage(lead, project, 0, 0);
   if (stageMsg) {
-    const payload = {
+    const result = await sendViaWhatsApp({
       leadId: lead.id,
       leadName: lead.name,
       phone: lead.phone,
@@ -277,15 +253,13 @@ export async function triggerStageChange(lead, oldStage, newStage) {
       projectName: project?.name || lead.projectName || lead.project || 'Ashray Properties',
       stage: newStage,
       config: lead.config,
+      lead,
       event: 'stage_change',
-      oldStage,
-      newStage
-    };
-
-    const result = await sendViaN8n(payload);
+      templateName: stageMsg.templateId,
+    });
     if (result.success) {
-      storeMessage(lead, stageMsg.text, 'out', true, stageMsg.templateId);
-      logAutomation(lead, stageMsg.templateId, stageMsg.label, 'sent');
+      storeMessage(lead, stageMsg.text, 'out', true, stageMsg.templateId, result.messageId);
+      logAutomation(lead, stageMsg.templateId, stageMsg.label, 'sent', null, result.method);
     }
   }
 
@@ -293,20 +267,19 @@ export async function triggerStageChange(lead, oldStage, newStage) {
 }
 
 /**
- * Handle incoming message from n8n (delivery callback or inbound message)
+ * Handle incoming message from Meta webhook
  */
-export function handleIncomingMessage(leadId, messageText, direction = 'in') {
+export function handleIncomingMessage(leadId, messageText, direction = 'in', metaMessageId = null) {
   const db = getDb();
   const lead = db.contacts.find(c => Number(c.id) === Number(leadId));
   if (!lead) return null;
 
-  // Store the incoming message
-  const msg = storeMessage(lead, messageText, direction, false);
+  const msg = storeMessage(lead, messageText, direction, false, null, metaMessageId);
 
-  // Mark that lead has replied — pause automation for human takeover
   if (direction === 'in') {
     lead.repliedAt = new Date().toISOString();
-    lead.automationPaused = true; // Pause until human responds
+    lead.lastInboundAt = new Date().toISOString();
+    lead.automationPaused = true;
   }
 
   saveDb();
@@ -314,13 +287,53 @@ export function handleIncomingMessage(leadId, messageText, direction = 'in') {
 }
 
 /**
- * Handle after-hours lead inquiries.
- * Sends auto-reply and creates priority callback task.
+ * Process inbound messages from the Meta webhook
+ */
+export function processInboundWebhook(body) {
+  const messages = parseInboundWebhook(body);
+  const db = getDb();
+  const results = [];
+
+  for (const inbound of messages) {
+    if (inbound.type === 'status') continue;
+    if (!inbound.text) continue;
+
+    const cleanPhone = normalizePhone(inbound.phone);
+    const lead = db.contacts.find(c => {
+      const leadPhone = normalizePhone(c.phone);
+      return leadPhone && cleanPhone && leadPhone === cleanPhone;
+    });
+
+    if (!lead) {
+      console.log(`📩 Inbound WhatsApp from unknown number: ${inbound.phone}`);
+      continue;
+    }
+
+    const msg = handleIncomingMessage(lead.id, inbound.text, 'in', inbound.messageId);
+    if (msg) {
+      results.push({
+        leadId: lead.id,
+        leadName: lead.name,
+        message: inbound.text,
+        senderName: inbound.name,
+      });
+      console.log(`📩 Inbound from ${lead.name}: "${inbound.text.substring(0, 50)}"`);
+    }
+  }
+
+  if (results.length > 0) {
+    saveDb();
+  }
+
+  return results;
+}
+
+/**
+ * Handle after-hours lead inquiries
  */
 export function handleAfterHoursLead(lead, db) {
   if (!db) db = getDb();
 
-  // IST is UTC+5:30
   const now = new Date();
   const istOffset = 5.5 * 60 * 60 * 1000;
   const istTime = new Date(now.getTime() + istOffset);
@@ -331,18 +344,14 @@ export function handleAfterHoursLead(lead, db) {
     return { isAfterHours: false, message: null, task: null };
   }
 
-  // Get project name
   const projects = db.projects || [];
   const project = projects.find(p => Number(p.id) === Number(lead.projectId));
   const projectName = project ? project.name : 'our project';
 
-  // Auto-reply message
   const message = `Hi ${lead.name}! Thank you for your interest in ${projectName}. Our team will contact you within 15 minutes during business hours (9 AM – 8 PM). In the meantime, feel free to browse our brochure!`;
 
-  // Set after-hours flag
   lead.afterHoursFlag = true;
 
-  // Add to timeline
   if (!lead.timeline) lead.timeline = [];
   lead.timeline.unshift({
     type: 'auto-reply',
@@ -351,9 +360,8 @@ export function handleAfterHoursLead(lead, db) {
     icon: 'clock'
   });
 
-  // Create priority callback task for 9 AM next day
   const tomorrow9AM = new Date(istTime);
-  tomorrow9AM.setUTCHours(3, 30, 0, 0); // 9 AM IST = 3:30 UTC
+  tomorrow9AM.setUTCHours(3, 30, 0, 0);
   if (hour >= 20) {
     tomorrow9AM.setDate(tomorrow9AM.getDate() + 1);
   }
@@ -380,10 +388,15 @@ export function handleAfterHoursLead(lead, db) {
 
 /**
  * Start the automation scheduler
- * Runs every 60 seconds and checks all eligible leads
  */
 export function startAutomationScheduler() {
-  console.log('⏰ WhatsApp Automation Scheduler started (every 60s)');
+  if (!isConfigured()) {
+    console.log('⚠️  WhatsApp API not configured — automation scheduler NOT started');
+    console.log('   Set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN in server/.env');
+    return;
+  }
+
+  console.log('⏰ WhatsApp Automation Scheduler started (every 60s) — Meta Cloud API direct');
 
   setInterval(async () => {
     try {
@@ -391,11 +404,14 @@ export function startAutomationScheduler() {
       if (triggered.length > 0) {
         console.log(`📱 Automation sent ${triggered.length} message(s):`);
         triggered.forEach(t => {
-          console.log(`   → ${t.leadName} (${t.stage}): ${t.label}`);
+          console.log(`   → ${t.leadName} (${t.stage}): ${t.label} [${t.method}]`);
         });
       }
     } catch (err) {
       console.error('Automation scheduler error:', err.message);
     }
-  }, 60000); // Every 60 seconds
+  }, 60000);
 }
+
+// Re-export webhook helpers for route usage
+export { handleWebhookVerification, parseInboundWebhook, isConfigured as isWhatsAppConfigured };

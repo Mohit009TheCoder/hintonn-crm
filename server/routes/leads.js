@@ -89,8 +89,13 @@ router.post('/', authorize('leads', 'create'), (req, res) => {
     : (rep || currentUser?.name || 'Rohan Mehta');
 
   const existingLeads = getCollection('contacts');
-  const cleanPhone = phone.replace(/[\s-]/g, '');
-  const dup = existingLeads.find(l => l.phone && l.phone.replace(/[\s-]/g, '') === cleanPhone);
+  const cleanPhone = phone ? phone.replace(/[\s-]/g, '') : '';
+  const cleanEmail = email ? email.toLowerCase().trim() : '';
+  const dup = existingLeads.find(l => {
+    const lPhone = l.phone ? l.phone.replace(/[\s-]/g, '') : '';
+    const lEmail = l.email ? l.email.toLowerCase().trim() : '';
+    return (lPhone && lPhone === cleanPhone) || (cleanEmail && lEmail && lEmail === cleanEmail);
+  });
 
   const initialScore = Math.floor(Math.random() * 35) + 50; // 50-85
   const newLead = {

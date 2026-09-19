@@ -596,5 +596,6 @@
   "nurtureLog": [],
   "slaAlerts": [],
   "leadActivities": [],
-  "paymentMilestones": []
+  "paymentMilestones": [],
+  "duplicateLeads": []
 }

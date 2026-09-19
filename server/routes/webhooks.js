@@ -1,25 +1,28 @@
 /**
- * Webhook Routes for n8n Integration
- * 
- * Outbound: CRM → n8n (send WhatsApp messages)
- * Inbound: n8n → CRM (delivery status, incoming messages)
- * 
+ * Webhook Routes — WhatsApp Direct Meta API
+ *
+ * Outbound: CRM → Meta Cloud API (send WhatsApp messages)
+ * Inbound: Meta → CRM (delivery status, incoming messages)
+ *
  * Endpoints:
- * POST /api/webhooks/n8n/outbound    — Send message via n8n
- * POST /api/webhooks/n8n/inbound     — Receive delivery status from n8n
+ * POST /api/webhooks/n8n/outbound    — Send message (backward compat)
+ * POST /api/webhooks/n8n/inbound     — Receive delivery status
  * POST /api/webhooks/n8n/message     — Receive incoming WhatsApp messages
- * GET  /api/webhooks/n8n/status      — Check n8n connection status
+ * GET  /api/webhooks/n8n/status      — Check WhatsApp API connection status
+ * POST /api/webhooks/n8n/trigger/:id — Manually trigger automation for a lead
+ * POST /api/webhooks/n8n/pause/:id   — Pause/resume automation for a lead
  */
 
 import express from 'express';
 import { getDb, saveDb } from '../data/db.js';
-import { sendViaN8n, handleIncomingMessage } from '../data/automation.js';
+import { sendViaWhatsApp, handleIncomingMessage } from '../data/automation.js';
+import { isConfigured as isWhatsAppConfigured } from '../data/whatsapp-api.js';
 
 const router = express.Router();
 
 /**
  * POST /api/webhooks/n8n/outbound
- * Manually trigger an outbound message via n8n
+ * Manually trigger an outbound message
  * Body: { contactId, message, templateId? }
  */
 router.post('/outbound', async (req, res) => {
@@ -34,24 +37,16 @@ router.post('/outbound', async (req, res) => {
 
   const project = db.projects.find(p => p.id === lead.projectId) || db.projects[0];
 
-  const payload = {
+  const result = await sendViaWhatsApp({
     leadId: lead.id,
     leadName: lead.name,
     phone: lead.phone,
     message,
-    templateId: templateId || 'manual',
-    templateLabel: 'Manual Send',
-    projectId: lead.projectId,
-    projectName: project.name,
-    stage: lead.stage,
-    config: lead.config,
-    event: 'manual_send'
-  };
-
-  const result = await sendViaN8n(payload);
+    lead,
+    templateName: templateId || 'hello_world',
+  });
 
   if (result.success) {
-    // Store in waLog
     if (!lead.waLog) lead.waLog = [];
     lead.waLog.push({
       id: lead.waLog.length + 1,
@@ -61,10 +56,10 @@ router.post('/outbound', async (req, res) => {
       }),
       dir: 'out',
       auto: false,
+      metaMessageId: result.messageId,
       sentAt: new Date().toISOString()
     });
 
-    // Timeline entry
     if (!lead.timeline) lead.timeline = [];
     lead.timeline.unshift({
       type: 'whatsapp',
@@ -76,14 +71,13 @@ router.post('/outbound', async (req, res) => {
     saveDb();
     res.json({ success: true, data: lead.waLog[lead.waLog.length - 1] });
   } else {
-    res.status(502).json({ success: false, message: 'Failed to send via n8n', error: result.error });
+    res.status(502).json({ success: false, message: 'Failed to send', error: result.error });
   }
 });
 
 /**
  * POST /api/webhooks/n8n/inbound
- * n8n calls this endpoint with delivery status updates
- * Body: { leadId, status, messageId, error? }
+ * Receive delivery status updates (called by Meta or manual entry)
  */
 router.post('/inbound', (req, res) => {
   const { leadId, status, messageId, error } = req.body;
@@ -95,15 +89,13 @@ router.post('/inbound', (req, res) => {
   const lead = db.contacts.find(c => Number(c.id) === Number(leadId));
   if (!lead) return res.status(404).json({ success: false, message: 'Lead not found' });
 
-  // Update delivery status in waLog
   if (lead.waLog && lead.waLog.length > 0) {
     const lastMsg = lead.waLog[lead.waLog.length - 1];
-    lastMsg.deliveryStatus = status; // 'delivered', 'read', 'failed'
-    lastMsg.messageId = messageId;
+    lastMsg.deliveryStatus = status;
+    lastMsg.metaMessageId = lastMsg.metaMessageId || messageId;
     if (error) lastMsg.error = error;
   }
 
-  // Log in automation log
   if (!lead.automationLog) lead.automationLog = [];
   lead.automationLog.push({
     templateId: 'delivery_status',
@@ -120,21 +112,19 @@ router.post('/inbound', (req, res) => {
 
 /**
  * POST /api/webhooks/n8n/message
- * n8n calls this when a WhatsApp message is received from a lead
- * Body: { leadId, message, timestamp? }
+ * Receive incoming WhatsApp messages (manual or from n8n)
  */
 router.post('/message', (req, res) => {
   const { leadId, message, phone, timestamp } = req.body;
 
-  // If no leadId, try to find by phone
   let lead;
   const db = getDb();
 
   if (leadId) {
     lead = db.contacts.find(c => Number(c.id) === Number(leadId));
   } else if (phone) {
-    const cleanPhone = phone.replace(/[\s-+]/g, '');
-    lead = db.contacts.find(c => c.phone && c.phone.replace(/[\s-+]/g, '').includes(cleanPhone.slice(-10)));
+    const cleanPhone = phone.replace(/[\s\-+]/g, '');
+    lead = db.contacts.find(c => c.phone && c.phone.replace(/[\s\-+]/g, '').includes(cleanPhone.slice(-10)));
   }
 
   if (!lead) {
@@ -158,27 +148,10 @@ router.post('/message', (req, res) => {
 
 /**
  * GET /api/webhooks/n8n/status
- * Check if n8n webhook is reachable
+ * Check WhatsApp API connection status
  */
 router.get('/status', async (req, res) => {
   const db = getDb();
-  const settings = db.settings || {};
-  const webhookUrl = settings.automation?.n8nWebhookUrl || process.env.N8N_WEBHOOK_URL;
-
-  let n8nReachable = false;
-  try {
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: 'ping' }),
-      signal: AbortSignal.timeout(3000)
-    });
-    n8nReachable = response.ok;
-  } catch {
-    n8nReachable = false;
-  }
-
-  // Count active automations
   const contacts = db.contacts || [];
   const activeLeads = contacts.filter(c => !['won', 'lost'].includes(c.stage) && !c.automationPaused);
   const pausedLeads = contacts.filter(c => c.automationPaused);
@@ -189,12 +162,14 @@ router.get('/status', async (req, res) => {
   res.json({
     success: true,
     data: {
-      webhookUrl,
-      n8nReachable,
+      configured: isWhatsAppConfigured(),
+      mode: 'direct_meta_api',
+      phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || null,
+      n8nReachable: false, // No longer using n8n
       activeLeads: activeLeads.length,
       pausedLeads: pausedLeads.length,
       totalMessagesSent: totalSent,
-      schedulerRunning: true
+      schedulerRunning: isWhatsAppConfigured()
     }
   });
 });
@@ -225,22 +200,15 @@ router.post('/trigger/:leadId', async (req, res) => {
     return res.json({ success: false, message: 'No message due for this lead' });
   }
 
-  const { sendViaN8n } = await import('../data/automation.js');
-  const payload = {
+  const { sendViaWhatsApp } = await import('../data/automation.js');
+  const result = await sendViaWhatsApp({
     leadId: lead.id,
     leadName: lead.name,
     phone: lead.phone,
     message: nextMsg.text,
-    templateId: nextMsg.templateId,
-    templateLabel: nextMsg.label,
-    projectId: lead.projectId,
-    projectName: project.name,
-    stage: lead.stage,
-    config: lead.config,
-    event: 'manual_trigger'
-  };
-
-  const result = await sendViaN8n(payload);
+    lead,
+    templateName: nextMsg.templateId,
+  });
 
   if (result.success) {
     if (!lead.waLog) lead.waLog = [];
@@ -253,6 +221,7 @@ router.post('/trigger/:leadId', async (req, res) => {
       dir: 'out',
       auto: true,
       templateId: nextMsg.templateId,
+      metaMessageId: result.messageId,
       sentAt: new Date().toISOString()
     });
 
@@ -261,6 +230,7 @@ router.post('/trigger/:leadId', async (req, res) => {
       templateId: nextMsg.templateId,
       label: nextMsg.label,
       status: 'sent',
+      method: result.method,
       timestamp: new Date().toISOString(),
       stage: lead.stage
     });
@@ -272,7 +242,8 @@ router.post('/trigger/:leadId', async (req, res) => {
     success: result.success,
     message: result.success ? `Sent: ${nextMsg.label}` : `Failed: ${result.error}`,
     templateId: nextMsg.templateId,
-    label: nextMsg.label
+    label: nextMsg.label,
+    method: result.method
   });
 });
 
@@ -281,7 +252,7 @@ router.post('/trigger/:leadId', async (req, res) => {
  * Pause/resume automation for a lead
  */
 router.post('/pause/:leadId', (req, res) => {
-  const { pause } = req.body; // true = pause, false = resume
+  const { pause } = req.body;
   const db = getDb();
   const lead = db.contacts.find(c => Number(c.id) === Number(req.params.leadId));
   if (!lead) return res.status(404).json({ success: false, message: 'Lead not found' });
