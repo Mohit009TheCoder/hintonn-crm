@@ -27,6 +27,12 @@
       "timeline": [
         {
           "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Meera! Just a reminder about *Skyline Residence...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
+        {
+          "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Meera! 🎉\n\nBased on your preferences, ...\"",
           "time": "Just now",
           "icon": "messagecircle"
@@ -109,6 +115,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5ODI1MDExMjM0FQIAERgUQ0VENjcyNzE1MzU0NTVGNUY2MUQA",
           "sentAt": "2026-09-19T12:57:18.470Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Meera! Just a reminder about *Skyline Residences*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5ODI1MDExMjM0FQIAERgUQ0UyQ0VBN0JERThGMUUxREYzODUA",
+          "sentAt": "2026-09-19T12:58:18.103Z"
         }
       ],
       "automationLog": [
@@ -119,6 +135,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:18.470Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:18.103Z",
           "stage": "qualified"
         }
       ]
@@ -148,6 +173,12 @@
         }
       ],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Rajesh! Just a reminder about *Horizon Heights*...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Rajesh! 🎉\n\nBased on your preferences,...\"",
@@ -208,6 +239,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5OTI1MDQ0NTIxFQIAERgUQ0UwRkMwQTQwOEE2RTI5MEUwMjYA",
           "sentAt": "2026-09-19T12:57:20.079Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Rajesh! Just a reminder about *Horizon Heights*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5OTI1MDQ0NTIxFQIAERgUQ0U2QzA2MDM2RkM5RDE2ODQ2MkMA",
+          "sentAt": "2026-09-19T12:58:19.528Z"
         }
       ],
       "automationLog": [
@@ -218,6 +259,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:20.079Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:19.528Z",
           "stage": "qualified"
         }
       ]
@@ -248,6 +298,12 @@
         }
       ],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Kavita! Just a reminder about *Vista Greens*. \ud83d...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Kavita! 🎉\n\nBased on your preferences,...\"",
@@ -328,6 +384,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5NzI1MDg4MTIzFQIAERgUQ0U0Q0MxNDVEQjU5RUQyOEM1QjMA",
           "sentAt": "2026-09-19T12:57:21.494Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Kavita! Just a reminder about *Vista Greens*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5NzI1MDg4MTIzFQIAERgUQ0UxMjg1MkZFNzREMUEyOUJGRTgA",
+          "sentAt": "2026-09-19T12:58:21.088Z"
         }
       ],
       "automationLog": [
@@ -338,6 +404,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:21.494Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:21.088Z",
           "stage": "qualified"
         }
       ]
@@ -376,6 +451,12 @@
         }
       ],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Vikram! Just a reminder about *Palm Meadows Vil...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Vikram! 🎉\n\nBased on your preferences,...\"",
@@ -465,6 +546,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5ODk4MDMzMjEwFQIAERgUQ0U4RTE0NzExRTA2ODlCQTE2MjIA",
           "sentAt": "2026-09-19T12:57:23.235Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Vikram! Just a reminder about *Palm Meadows Villas*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5ODk4MDMzMjEwFQIAERgUQ0U3N0RCMEJGNkY5MjFFQUMyQUYA",
+          "sentAt": "2026-09-19T12:58:22.582Z"
         }
       ],
       "automationLog": [
@@ -475,6 +566,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:23.235Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:22.582Z",
           "stage": "qualified"
         }
       ]
@@ -497,6 +597,12 @@
       ],
       "notes": [],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Priyanka! Just a reminder about *Skyline Reside...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Priyanka! 🎉\n\nBased on your preference...\"",
@@ -556,6 +662,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5NjM4MDc3NjU0FQIAERgUQ0U1NUI5QTNBNTgyMEMzNkM4NDcA",
           "sentAt": "2026-09-19T12:57:24.748Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Priyanka! Just a reminder about *Skyline Residences*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5NjM4MDc3NjU0FQIAERgUQ0UwQTkxRTQwNjQxOEYzMDE4MjkA",
+          "sentAt": "2026-09-19T12:58:23.920Z"
         }
       ],
       "automationLog": [
@@ -566,6 +682,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:24.748Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:23.920Z",
           "stage": "qualified"
         }
       ]
@@ -596,6 +721,12 @@
         }
       ],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Amit, just following up on the offer for *Emera...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Hi Amit, great news! 🎊\n\nWe've prepared a *special...\"",
@@ -680,6 +811,16 @@
           "templateId": "negotiate_offer",
           "metaMessageId": "wamid.HBgMOTE5MDk5MDEyOTg3FQIAERgUQ0U3OTM4NUE1QjY4MzY5MzkxMUIA",
           "sentAt": "2026-09-19T12:57:26.409Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Amit, just following up on the offer for *Emerald Business Park*. ⏰\n\nWe have *2 other buyers* interested in the same unit.\nTo secure your unit, we need your confirmation by *tomorrow*.\n\nWould you like to discuss the terms? I'm available on call anytime. 📞",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "negotiate_urgency_12h",
+          "metaMessageId": "wamid.HBgMOTE5MDk5MDEyOTg3FQIAERgUQ0VBQTY1MDY0RDJCNDA3MEI5NjAA",
+          "sentAt": "2026-09-19T12:58:25.305Z"
         }
       ],
       "automationLog": [
@@ -690,6 +831,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:26.409Z",
+          "stage": "negotiation"
+        },
+        {
+          "templateId": "negotiate_urgency_12h",
+          "label": "12h Urgency",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:25.305Z",
           "stage": "negotiation"
         }
       ]
@@ -712,6 +862,12 @@
       ],
       "notes": [],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Neha, just following up on the offer for *Horiz...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Hi Neha, great news! 🎊\n\nWe've prepared a *special...\"",
@@ -783,6 +939,16 @@
           "templateId": "negotiate_offer",
           "metaMessageId": "wamid.HBgMOTE4ODY2MDQ1MTIzFQIAERgUQ0UxMzI5NjhDNTc4QzkyQkZEMkQA",
           "sentAt": "2026-09-19T12:57:28.148Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Neha, just following up on the offer for *Horizon Heights*. ⏰\n\nWe have *2 other buyers* interested in the same unit.\nTo secure your unit, we need your confirmation by *tomorrow*.\n\nWould you like to discuss the terms? I'm available on call anytime. 📞",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "negotiate_urgency_12h",
+          "metaMessageId": "wamid.HBgMOTE4ODY2MDQ1MTIzFQIAERgUQ0U5MTFFRDhBMDJBRTk4NDJGMDAA",
+          "sentAt": "2026-09-19T12:58:26.681Z"
         }
       ],
       "automationLog": [
@@ -793,6 +959,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:28.148Z",
+          "stage": "negotiation"
+        },
+        {
+          "templateId": "negotiate_urgency_12h",
+          "label": "12h Urgency",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:26.681Z",
           "stage": "negotiation"
         }
       ]
@@ -978,6 +1153,12 @@
       "timeline": [
         {
           "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Dhruv! Just a reminder about *Skyline Residence...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
+        {
+          "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Dhruv! 🎉\n\nBased on your preferences, ...\"",
           "time": "Just now",
           "icon": "messagecircle"
@@ -1042,6 +1223,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5ODI0MDkwODc2FQIAERgUQ0VFOTUxQ0I0MUM2NDc4RDIzRTkA",
           "sentAt": "2026-09-19T12:57:29.812Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Dhruv! Just a reminder about *Skyline Residences*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5ODI0MDkwODc2FQIAERgUQ0UzNzM0MDQ0NUE4NzRGRDQzREIA",
+          "sentAt": "2026-09-19T12:58:28.003Z"
         }
       ],
       "automationLog": [
@@ -1052,6 +1243,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:29.812Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:28.003Z",
           "stage": "qualified"
         }
       ]
@@ -1074,6 +1274,12 @@
       ],
       "notes": [],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Ritu, quick update! 📢\n\n*Emerald Business Park*...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Hi Ritu! Thank you for connecting with us. 🙏\n\nReg...\"",
@@ -1133,6 +1339,16 @@
           "templateId": "contacted_engage",
           "metaMessageId": "wamid.HBgMOTE5NjAxMDIzNDU2FQIAERgUQ0VDNjJEQzI4ODkyQURCMUJBQkEA",
           "sentAt": "2026-09-19T12:57:31.429Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Ritu, quick update! 📢\n\n*Emerald Business Park* has been getting a lot of interest this week.\nOnly *71 units* of Shop remaining.\n\nShall I hold a unit for you? Reply *HOLD* to reserve. 🏡",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "contacted_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5NjAxMDIzNDU2FQIAERgUQ0U1RDc4MzIzRjY1Njg3NjFDNEEA",
+          "sentAt": "2026-09-19T12:58:29.405Z"
         }
       ],
       "automationLog": [
@@ -1143,6 +1359,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:31.429Z",
+          "stage": "contacted"
+        },
+        {
+          "templateId": "contacted_nudge_12h",
+          "label": "12h Nudge",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:29.405Z",
           "stage": "contacted"
         }
       ]
@@ -1165,6 +1390,12 @@
       ],
       "notes": [],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Manish! Just a reminder about *Horizon Heights*...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Manish! 🎉\n\nBased on your preferences,...\"",
@@ -1226,6 +1457,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5MDU0MDc4OTAxFQIAERgUQ0UwMjQxQjI4REQwMDE5ODNEN0MA",
           "sentAt": "2026-09-19T12:57:33.166Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Manish! Just a reminder about *Horizon Heights*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5MDU0MDc4OTAxFQIAERgUQ0VFNTNFMERBNjk2RjU2Qjk5NTMA",
+          "sentAt": "2026-09-19T12:58:31.128Z"
         }
       ],
       "automationLog": [
@@ -1236,6 +1477,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:33.166Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:31.128Z",
           "stage": "qualified"
         }
       ]
@@ -1267,6 +1517,12 @@
         }
       ],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Foram! Just a reminder about *Vista Greens*. 📋...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Foram! 🎉\n\nBased on your preferences, ...\"",
@@ -1334,6 +1590,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5ODk4MDExMjIzFQIAERgUQ0VCM0U3MkExOTMwNzkyN0UzQzEA",
           "sentAt": "2026-09-19T12:57:34.620Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Foram! Just a reminder about *Vista Greens*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5ODk4MDExMjIzFQIAERgUQ0VCMkE2NUZGMzg0NjM5ODcyQjQA",
+          "sentAt": "2026-09-19T12:58:32.442Z"
         }
       ],
       "automationLog": [
@@ -1344,6 +1610,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:34.620Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:32.442Z",
           "stage": "qualified"
         }
       ]
@@ -1364,6 +1639,12 @@
       "tags": [],
       "notes": [],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Ketan! Just a reminder about *Skyline Residence...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Ketan! 🎉\n\nBased on your preferences, ...\"",
@@ -1430,6 +1711,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5OTA5OTU1NDMyFQIAERgUQ0UwQzQyMjVCRjk0ODk5QTkyRTEA",
           "sentAt": "2026-09-19T12:57:36.341Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Ketan! Just a reminder about *Skyline Residences*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5OTA5OTU1NDMyFQIAERgUQ0VGMzU2MkUxNkY1M0RGNzVCOUUA",
+          "sentAt": "2026-09-19T12:58:33.827Z"
         }
       ],
       "automationLog": [
@@ -1440,6 +1731,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:36.341Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:33.827Z",
           "stage": "qualified"
         }
       ]
@@ -1463,6 +1763,12 @@
       ],
       "notes": [],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Alpa! Just a reminder about *Palm Meadows Villa...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Great news, Alpa! 🎉\n\nBased on your preferences, *...\"",
@@ -1524,6 +1830,16 @@
           "templateId": "qualified_visit",
           "metaMessageId": "wamid.HBgMOTE5NzM3MDIwMDk5FQIAERgUQ0U2MkUxOTAzQTJEMkZFMTBFMkMA",
           "sentAt": "2026-09-19T12:57:37.878Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Alpa! Just a reminder about *Palm Meadows Villas*. 📋\n\nWe can arrange a visit at your convenience — even on weekends.\nOur team will pick you up and drop you back. 🚗\n\nReply *VISIT* to schedule now!",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "qualified_nudge_12h",
+          "metaMessageId": "wamid.HBgMOTE5NzM3MDIwMDk5FQIAERgUQ0VFMkZFNzQwQTY4NThBRTU0RDcA",
+          "sentAt": "2026-09-19T12:58:35.293Z"
         }
       ],
       "automationLog": [
@@ -1534,6 +1850,15 @@
           "error": null,
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:37.878Z",
+          "stage": "qualified"
+        },
+        {
+          "templateId": "qualified_nudge_12h",
+          "label": "12h Visit Reminder",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:35.293Z",
           "stage": "qualified"
         }
       ]
@@ -1557,6 +1882,12 @@
       ],
       "notes": [],
       "timeline": [
+        {
+          "type": "whatsapp",
+          "text": "WhatsApp (Auto): \"Hi Ritu! Thank you for connecting with us. 🙏\n\nReg...\"",
+          "time": "Just now",
+          "icon": "messagecircle"
+        },
         {
           "type": "stage-change",
           "text": "Auto-updated stage to CONTACTED (Outbound call, brochure or WhatsApp communication initiated)",
@@ -1616,6 +1947,16 @@
           "templateId": "new_welcome",
           "metaMessageId": "wamid.HBgMOTE5NjAxMDIzNDU2FQIAERgUQ0VCNzQ1ODI1M0E0MUQ2NjlBOUQA",
           "sentAt": "2026-09-19T12:57:39.348Z"
+        },
+        {
+          "id": 3,
+          "text": "Hi Ritu! Thank you for connecting with us. 🙏\n\nRegarding *Emerald Business Park* — we'd love to show you the property in person.\nWe have a *special offer* this month on Shop units.\n\n📅 What day works best for your site visit?\nWe can also arrange a *virtual tour* if you prefer.",
+          "time": "19 Sept, 06:28 pm",
+          "dir": "out",
+          "auto": true,
+          "templateId": "contacted_engage",
+          "metaMessageId": "wamid.HBgMOTE5NjAxMDIzNDU2FQIAERgUQ0U5ODRFOTVCMTgxNjE0M0IzREIA",
+          "sentAt": "2026-09-19T12:58:36.685Z"
         }
       ],
       "automationLog": [
@@ -1627,6 +1968,15 @@
           "method": "text_fallback",
           "timestamp": "2026-09-19T12:57:39.348Z",
           "stage": "new"
+        },
+        {
+          "templateId": "contacted_engage",
+          "label": "Engagement Message",
+          "status": "sent",
+          "error": null,
+          "method": "text_fallback",
+          "timestamp": "2026-09-19T12:58:36.685Z",
+          "stage": "contacted"
         }
       ]
     }
