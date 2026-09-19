@@ -1546,7 +1546,7 @@
       "projectId": 4,
       "config": "Shop",
       "value": 5200000,
-      "stage": "new",
+      "stage": "contacted",
       "createdMinutesAgo": 12,
       "reminderHoursAgo": 0.2,
       "rep": null,
@@ -1557,6 +1557,12 @@
       ],
       "notes": [],
       "timeline": [
+        {
+          "type": "stage-change",
+          "text": "Auto-updated stage to CONTACTED (Outbound call, brochure or WhatsApp communication initiated)",
+          "time": "Just now",
+          "icon": "target"
+        },
         {
           "type": "whatsapp",
           "text": "WhatsApp (Auto): \"Hi Ritu! 👋 Thank you for your interest in *Emeral...\"",
@@ -1570,7 +1576,7 @@
           "icon": "messagecircle"
         }
       ],
-      "dealProb": 35,
+      "dealProb": 45,
       "expectedClose": "Dec 2026",
       "lossReason": null,
       "preferences": {
