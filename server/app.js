@@ -30,6 +30,9 @@ import authRouter from './routes/auth.js';
 
 const app = express();
 
+// Trust Vercel's proxy (required for rate-limit to read X-Forwarded-For)
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
