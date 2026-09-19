@@ -25,3 +25,4 @@ Thumbs.db
 .vscode/
 .idea/
 .vercel
+server/data/local-db.json

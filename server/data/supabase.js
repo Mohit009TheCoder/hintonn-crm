@@ -362,15 +362,21 @@ export async function initDb() {
       console.log('✅ Supabase connected & data loaded into memory');
       return cache;
     } catch (err) {
-      console.warn('⚠️  Could not load all tables from Supabase:', err.message);
-      console.warn('👉 Switching to local persistent storage mode (server/data/local-db.json).');
-      console.warn('👉 Run "npm run supabase:seed" after creating tables with supabase-schema.sql to sync.');
+      console.warn('⚠️  Supabase load failed:', err.message);
+      // Don't fall back to local mode — start empty so seed data doesn't get written back
+      cache = {};
+      for (const col of COLLECTIONS) cache[col] = [];
+      for (const key of SINGLETON_KEYS) cache[key] = {};
+      cacheLoaded = true;
+      useLocalMode = false;
+      console.log('ℹ️  Starting with empty cache (Supabase tables may need seeding)');
+      return cache;
     }
   } else {
     console.log('ℹ️  No SUPABASE_URL configured in .env. Running in local persistence mode.');
   }
 
-  // Local fallback
+  // Local fallback only when Supabase is NOT configured
   useLocalMode = true;
   cache = await loadFromLocalDb();
   cacheLoaded = true;
