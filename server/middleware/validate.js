@@ -44,7 +44,7 @@ export const validatePartner = [
 export const validateProject = [
   body('name').trim().notEmpty().withMessage('Project name is required').isLength({ max: 300 }),
   body('loc').optional().trim().isLength({ max: 300 }),
-  body('type').optional().isIn(['residential', 'commercial', 'mixed', 'villa', 'plot']).withMessage('Invalid project type'),
+  body('type').optional().toLowerCase().isIn(['residential', 'commercial', 'mixed', 'villa', 'plot']).withMessage('Invalid project type'),
   validate,
 ];
 
