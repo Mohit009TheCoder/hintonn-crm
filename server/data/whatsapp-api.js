@@ -9,17 +9,17 @@
  *   Meta inbound webhook → /api/whatsapp/webhook → this module → CRM lead update
  */
 
-const API_VERSION = process.env.WHATSAPP_API_VERSION || 'v21.0';
-const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
-const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
-const GRAPH_URL = `https://graph.facebook.com/${API_VERSION}`;
+const getApiVersion = () => process.env.WHATSAPP_API_VERSION || 'v21.0';
+const getPhoneNumberId = () => process.env.WHATSAPP_PHONE_NUMBER_ID;
+const getAccessToken = () => process.env.WHATSAPP_ACCESS_TOKEN;
+const getVerifyToken = () => process.env.WHATSAPP_VERIFY_TOKEN;
+const getGraphUrl = () => `https://graph.facebook.com/${getApiVersion()}`;
 
 /**
  * Check if the WhatsApp API is properly configured.
  */
 export function isConfigured() {
-  return !!(PHONE_NUMBER_ID && ACCESS_TOKEN);
+  return !!(getPhoneNumberId() && getAccessToken());
 }
 
 /**
@@ -28,9 +28,9 @@ export function isConfigured() {
 export function getConnectionStatus() {
   return {
     configured: isConfigured(),
-    phoneNumberId: PHONE_NUMBER_ID || null,
-    apiVersion: API_VERSION,
-    graphUrl: GRAPH_URL,
+    phoneNumberId: getPhoneNumberId() || null,
+    apiVersion: getApiVersion(),
+    graphUrl: getGraphUrl(),
   };
 }
 
@@ -53,10 +53,10 @@ export async function sendTextMessage(to, text) {
   }
 
   try {
-    const response = await fetch(`${GRAPH_URL}/${PHONE_NUMBER_ID}/messages`, {
+    const response = await fetch(`${getGraphUrl()}/${getPhoneNumberId()}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${getAccessToken()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -116,10 +116,10 @@ export async function sendTemplateMessage(to, templateName, languageCode = 'en_U
   }
 
   try {
-    const response = await fetch(`${GRAPH_URL}/${PHONE_NUMBER_ID}/messages`, {
+    const response = await fetch(`${getGraphUrl()}/${getPhoneNumberId()}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${getAccessToken()}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -197,7 +197,7 @@ export function handleWebhookVerification(req, res) {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+  if (mode === 'subscribe' && token === getVerifyToken()) {
     console.log('✅ WhatsApp webhook verified by Meta');
     res.status(200).send(challenge);
     return true;
@@ -330,4 +330,4 @@ function extractTemplateParams(text) {
   return lines.slice(0, 10);
 }
 
-export { normalizePhone, GRAPH_URL };
+export { normalizePhone, getGraphUrl as GRAPH_URL };
