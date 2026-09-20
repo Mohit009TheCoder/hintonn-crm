@@ -101,25 +101,33 @@ export default function Header({ currentView, onToggleSidebar, onSelectLead, onV
 
       {/* Global Search Bar */}
       <div ref={searchContainerRef} className="relative flex-1 max-w-[420px]">
-        <div className="search-input flex items-center gap-2 border border-[#E2E8F0] rounded-[10px] px-3.5 py-2 focus-within:border-[#CBD5E1]">
-          <Icon name="search" size={16} className="text-[#94A3B8]" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search leads, phone or project"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => { if (searchResults) setShowSearchBox(true); }}
-            className="bg-transparent outline-none w-full text-[13.4px] placeholder:text-[#94A3B8]"
-            autoComplete="off"
-          />
-          <span className="text-[11px] font-mono text-[#94A3B8] bg-white border border-[#E2E8F0] rounded px-1.5 py-0.5">
-            /
-          </span>
-        </div>
+        {currentView === 'overview' ? (
+          <div className="flex items-center h-full px-2">
+            <span className="text-[14.5px] font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#2563EB] to-[#9333EA]">
+              Intelligent Real Estate Automation
+            </span>
+          </div>
+        ) : (
+          <div className="search-input flex items-center gap-2 border border-[#E2E8F0] rounded-[10px] px-3.5 py-2 focus-within:border-[#CBD5E1]">
+            <Icon name="search" size={16} className="text-[#94A3B8]" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search leads, phone or project"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => { if (searchResults) setShowSearchBox(true); }}
+              className="bg-transparent outline-none w-full text-[13.4px] placeholder:text-[#94A3B8]"
+              autoComplete="off"
+            />
+            <span className="text-[11px] font-mono text-[#94A3B8] bg-white border border-[#E2E8F0] rounded px-1.5 py-0.5">
+              /
+            </span>
+          </div>
+        )}
 
         {/* Search Results Dropdown */}
-        {showSearchBox && searchResults && (
+        {currentView !== 'overview' && showSearchBox && searchResults && (
           <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-[#E2E8F0] rounded-[12px] shadow-2xl z-50 overflow-hidden max-h-[420px] overflow-y-auto">
             {/* Leads */}
             {searchResults.leads.length > 0 && (
