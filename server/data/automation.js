@@ -174,6 +174,34 @@ export async function triggerWelcomeMessage(lead) {
   const firstMsg = getNextMessage(lead, project, 0, 0);
   if (!firstMsg) return null;
 
+  // Try routing via n8n webhook first
+  try {
+    const n8nRes = await fetch('https://n8n.srv1173804.hstgr.cloud/webhook/lead-ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: lead.phone,
+        name: lead.name,
+        event: 'lead_created',
+        project: project?.name,
+        config: lead.config
+      })
+    });
+    
+    const n8nData = await n8nRes.json();
+    const msgId = n8nData?.messages?.[0]?.id;
+    
+    if (msgId) {
+      storeMessage(lead, firstMsg.text, 'out', true, firstMsg.templateId, msgId);
+      logAutomation(lead, firstMsg.templateId, firstMsg.label, 'sent', null, 'n8n_webhook');
+      saveDb();
+      return { success: true, messageId: msgId };
+    }
+  } catch (err) {
+    console.error('N8N webhook routing failed:', err.message);
+  }
+
+  // Fallback to direct Meta API
   const result = await sendViaWhatsApp({
     leadId: lead.id,
     leadName: lead.name,

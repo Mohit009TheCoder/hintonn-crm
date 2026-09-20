@@ -355,13 +355,22 @@ export function CRMProvider({ children }) {
       });
       const data = await res.json();
       if (data.success) {
-        setLeads(prev => [data.data, ...prev]);
-        toast(data.isDuplicate ? 'Lead created (Duplicate phone detected!)' : 'Lead created successfully');
+        if (data.isDuplicate) {
+          toast('Lead saved to Duplicates Queue');
+          if (fetchDuplicateLeads) fetchDuplicateLeads();
+        } else {
+          setLeads(prev => [data.data, ...prev]);
+          toast('Lead created successfully');
+        }
         fetchProjects();
         return data.data;
+      } else {
+        toast(data.message || 'Failed to create lead');
+        console.error('Add lead error:', data.errors || data.message);
       }
     } catch (e) {
-      toast('Failed to create lead');
+      toast('An error occurred while creating lead');
+      console.error(e);
     }
   };
 
