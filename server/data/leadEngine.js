@@ -310,14 +310,14 @@ export function findDuplicates(lead, db) {
   const contacts = db.contacts || [];
   const duplicates = [];
   
-  const cleanPhone = (lead.phone || '').replace(/[\s\-+]/g, '');
+  const cleanPhone = String(lead.phone || '').replace(/[\s\-+]/g, '');
   const email = (lead.email || '').toLowerCase().trim();
   
   for (const existing of contacts) {
     // Skip self
     if (existing.id === lead.id) continue;
     
-    const existingPhone = (existing.phone || '').replace(/[\s\-+]/g, '');
+    const existingPhone = String(existing.phone || '').replace(/[\s\-+]/g, '');
     const existingEmail = (existing.email || '').toLowerCase().trim();
     
     // Phone match

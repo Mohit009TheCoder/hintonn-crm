@@ -90,10 +90,10 @@ router.post('/', authorize('leads', 'create'), validateLead, async (req, res) =>
     : (rep || currentUser?.name || 'Rohan Mehta');
 
   const existingLeads = getCollection('contacts');
-  const cleanPhone = phone ? phone.replace(/[\s-]/g, '') : '';
+  const cleanPhone = phone ? String(phone).replace(/[\s-]/g, '') : '';
   const cleanEmail = email ? email.toLowerCase().trim() : '';
   const dup = existingLeads.find(l => {
-    const lPhone = l.phone ? l.phone.replace(/[\s-]/g, '') : '';
+    const lPhone = l.phone ? String(l.phone).replace(/[\s-]/g, '') : '';
     const lEmail = l.email ? l.email.toLowerCase().trim() : '';
     return (lPhone && lPhone === cleanPhone) || (cleanEmail && lEmail && lEmail === cleanEmail);
   });
@@ -133,14 +133,33 @@ router.post('/', authorize('leads', 'create'), validateLead, async (req, res) =>
   };
 
   try {
-    const saved = await asyncInsertItem('contacts', newLead);
+    let saved;
+    if (dup) {
+      const duplicateData = {
+        name,
+        phone,
+        email: email || '',
+        source: source || 'Website',
+        config: config || '',
+        budget: value ? Number(value) : 0,
+        message: 'Duplicate lead detected',
+        duplicate_of: dup.id,
+        match_type: 'phone_or_email',
+        status: 'pending',
+        capture_data: { capturedAt: new Date().toISOString() }
+      };
+      saved = await asyncInsertItem('duplicateLeads', duplicateData);
+      res.status(201).json({ success: true, data: saved, isDuplicate: true, message: 'Stored in duplicate leads' });
+    } else {
+      saved = await asyncInsertItem('contacts', newLead);
+      
+      // Trigger WhatsApp welcome automation
+      triggerWelcomeMessage(saved).catch(err =>
+        console.error('Welcome automation error:', err.message)
+      );
 
-    // Trigger WhatsApp welcome automation
-    triggerWelcomeMessage(saved).catch(err =>
-      console.error('Welcome automation error:', err.message)
-    );
-
-    res.status(201).json({ success: true, data: saved, isDuplicate: !!dup });
+      res.status(201).json({ success: true, data: saved, isDuplicate: false });
+    }
   } catch (error) {
     console.error('Failed to create lead:', error);
     res.status(500).json({ success: false, error: 'Failed to save lead to database' });

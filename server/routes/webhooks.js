@@ -123,8 +123,8 @@ router.post('/message', (req, res) => {
   if (leadId) {
     lead = db.contacts.find(c => Number(c.id) === Number(leadId));
   } else if (phone) {
-    const cleanPhone = phone.replace(/[\s\-+]/g, '');
-    lead = db.contacts.find(c => c.phone && c.phone.replace(/[\s\-+]/g, '').includes(cleanPhone.slice(-10)));
+    const cleanPhone = String(phone).replace(/[\s\-+]/g, '');
+    lead = db.contacts.find(c => c.phone && String(c.phone).replace(/[\s\-+]/g, '').includes(cleanPhone.slice(-10)));
   }
 
   if (!lead) {

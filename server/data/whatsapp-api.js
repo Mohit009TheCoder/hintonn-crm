@@ -293,7 +293,7 @@ function normalizePhone(phone) {
   if (!phone) return null;
 
   // Remove all non-digits
-  let digits = phone.replace(/\D/g, '');
+  let digits = String(phone).replace(/\D/g, '');
 
   // Indian numbers: if 10 digits, prepend 91
   if (digits.length === 10) {
