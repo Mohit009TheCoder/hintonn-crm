@@ -10,8 +10,7 @@
  * Usage: npm run clear
  */
 import 'dotenv/config';
-import { initDb, getDb, saveDb, isSupabaseConfigured, getSupabaseClient } from '../data/db.js';
-import { COLLECTIONS, SINGLETON_KEYS } from '../data/supabase.js';
+import { initDb, getDb, saveDb } from '../data/db.js';
 
 const COLLECTIONS_TO_CLEAR = [
   'contacts',
@@ -56,25 +55,6 @@ async function main() {
 
   // Initialize active database
   const db = await initDb();
-
-  // If Supabase is connected and tables exist, clear Supabase tables directly
-  if (isSupabaseConfigured()) {
-    const client = getSupabaseClient();
-    console.log('📡 Clearing dummy records from Supabase tables:');
-    for (const colName of COLLECTIONS_TO_CLEAR) {
-      const tableName = TABLE_MAP[colName] || colName;
-      try {
-        const { error } = await client.from(tableName).delete().neq('id', -999999);
-        if (error) {
-          console.log(`  ⚪ ${tableName}: ${error.message}`);
-        } else {
-          console.log(`  🗑️  ${tableName}: cleaned`);
-        }
-      } catch (e) {
-        console.log(`  ⚪ ${tableName}: ${e.message}`);
-      }
-    }
-  }
 
   // Clear in-memory cache and local-db.json
   console.log('\n🧹 Clearing in-memory & local persistent storage...');
