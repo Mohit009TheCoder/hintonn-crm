@@ -9,9 +9,7 @@ export const STAGES = [
 
 export const TEAM = [];
 
-export const RAW_USERS = [
-  { id: 1, name: 'Admin', email: 'admin@hintonn.com', phone: '+919999999999', role: 'admin', isActive: true }
-];
+export const RAW_USERS = [];
 
 export const RAW_PROJECTS = [
   { id: 1, name: 'Skyline Residences', type: 'Residential', loc: 'Bopal, Ahmedabad', configs: ['2 BHK', '3 BHK'], priceMin: 5800000, priceMax: 9500000, totalUnits: 240, available: 18, possession: 'Ready to move' },
