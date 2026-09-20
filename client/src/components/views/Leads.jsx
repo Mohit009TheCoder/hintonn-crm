@@ -169,6 +169,27 @@ export default function Leads({ onSelectLead, onOpenDialer, onOpenAddLead }) {
     }
   };
 
+  const handleBulkNurture = async () => {
+    for (const leadId of selectedLeads) {
+      await startNurture(leadId);
+    }
+    alert(`Started nurture sequence for ${selectedLeads.size} leads!`);
+    setSelectedLeads(new Set());
+    setShowBulkActions(false);
+  };
+
+  const handleBulkAssign = () => {
+    alert(`Assigning rep to ${selectedLeads.size} leads... (Feature in development)`);
+    setSelectedLeads(new Set());
+    setShowBulkActions(false);
+  };
+
+  const handleBulkTags = () => {
+    alert(`Adding tags to ${selectedLeads.size} leads... (Feature in development)`);
+    setSelectedLeads(new Set());
+    setShowBulkActions(false);
+  };
+
   return (
     <div className="space-y-5">
       {/* Top Header */}
@@ -340,13 +361,22 @@ export default function Leads({ onSelectLead, onOpenDialer, onOpenAddLead }) {
             {selectedLeads.size} lead{selectedLeads.size > 1 ? 's' : ''} selected
           </span>
           <div className="flex-1" />
-          <button className="text-[12px] font-semibold text-[#475569] bg-white border border-[#CBD5E1] px-3 py-1.5 rounded-[8px] hover:bg-[#F8FAFC] transition-all">
+          <button 
+            onClick={handleBulkAssign}
+            className="text-[12px] font-semibold text-[#475569] bg-white border border-[#CBD5E1] px-3 py-1.5 rounded-[8px] hover:bg-[#F8FAFC] transition-all"
+          >
             Assign Rep
           </button>
-          <button className="text-[12px] font-semibold text-[#475569] bg-white border border-[#CBD5E1] px-3 py-1.5 rounded-[8px] hover:bg-[#F8FAFC] transition-all">
+          <button 
+            onClick={handleBulkTags}
+            className="text-[12px] font-semibold text-[#475569] bg-white border border-[#CBD5E1] px-3 py-1.5 rounded-[8px] hover:bg-[#F8FAFC] transition-all"
+          >
             Add Tags
           </button>
-          <button className="text-[12px] font-semibold text-[#2563EB] bg-white border border-[#BFDBFE] px-3 py-1.5 rounded-[8px] hover:bg-[#EFF6FF] transition-all">
+          <button 
+            onClick={handleBulkNurture}
+            className="text-[12px] font-semibold text-[#2563EB] bg-white border border-[#BFDBFE] px-3 py-1.5 rounded-[8px] hover:bg-[#EFF6FF] transition-all"
+          >
             Start Nurture
           </button>
           <button
