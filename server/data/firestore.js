@@ -7,7 +7,7 @@
  *   Emulator (local dev): set FIRESTORE_EMULATOR_HOST=localhost:8082
  *   Cloud (production):   set GOOGLE_APPLICATION_CREDENTIALS to service account path
  */
-import admin, { cert } from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { existsSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -19,10 +19,10 @@ const __dirname = dirname(__filename);
 const isEmulator = !!process.env.FIRESTORE_EMULATOR_HOST;
 const projectId = process.env.FIREBASE_PROJECT_ID || 'demo-hintonn-crm';
 
-if (admin.getApps().length === 0) {
+if (getApps().length === 0) {
   if (isEmulator) {
     // Emulator mode — no real credentials needed
-    admin.initializeApp({ projectId });
+    initializeApp({ projectId });
     console.log(`🔧 Firestore EMULATOR mode → ${process.env.FIRESTORE_EMULATOR_HOST}`);
   } else {
     // Cloud mode — service account required
@@ -32,7 +32,7 @@ if (admin.getApps().length === 0) {
       process.exit(1);
     }
     const sa = JSON.parse(readFileSync(saPath, 'utf8'));
-    admin.initializeApp({ credential: cert(sa), projectId: sa.project_id });
+    initializeApp({ credential: cert(sa), projectId: sa.project_id });
     console.log('☁️  Firestore CLOUD mode →', sa.project_id);
   }
 }
@@ -254,4 +254,4 @@ export function getSupabaseClient() {
   return null;
 }
 
-export { db as firestoreDb, admin as firebaseAdmin };
+export { db as firestoreDb };
