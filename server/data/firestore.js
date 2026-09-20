@@ -58,7 +58,7 @@ export const COLLECTIONS = [
   'siteVisits', 'broadcasts', 'sequences', 'team',
   'brochures', 'notifications', 'stages',
   'leadSources', 'nurtureSequences', 'nurtureLog', 'slaAlerts', 'leadActivities',
-  'paymentMilestones', 'users', 'duplicateLeads'
+  'paymentMilestones', 'users', 'duplicateLeads', 'lead_messages'
 ];
 
 // Singleton documents stored under a fixed doc ID inside their collection
