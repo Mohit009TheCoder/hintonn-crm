@@ -10,7 +10,7 @@ const ROLE_BADGE_COLORS = {
   viewer: 'bg-[#F1F5F9] text-[#64748B]',
 };
 
-export default function Header({ onToggleSidebar, onSelectLead, onViewChange, onOpenAiModal }) {
+export default function Header({ currentView, onToggleSidebar, onSelectLead, onViewChange, onOpenAiModal }) {
   const { user, logout, token } = useAuth();
   const { notifications, markNotificationsRead } = useCRM();
 

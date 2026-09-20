@@ -100,6 +100,7 @@ export default function App() {
       {/* Main Workspace Column */}
       <div className="flex-1 min-w-0 flex flex-col md:ml-[248px]">
         <Header
+          currentView={currentView}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           onSelectLead={(id) => setActiveDrawerLeadId(id)}
           onViewChange={(view) => setCurrentView(view)}
