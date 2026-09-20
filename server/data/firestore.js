@@ -79,14 +79,13 @@ async function loadAllFromFirestore() {
   // Load regular collections (arrays of docs)
   const reads = COLLECTIONS.map(async (colName) => {
     const snap = await db.collection(colName).get();
-    result[colName] = snap.docs.map(d => {
-      // Restore numeric IDs — Firestore doc IDs are always strings,
-      // but the original data used numbers. Convert back so every
-      // leads.find(c => c.id === t.contactId) comparison works.
-      const rawId = d.id;
-      const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
-      return { id, ...d.data() };
-    });
+    result[colName] = snap.docs
+      .map(d => {
+        const rawId = d.id;
+        const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
+        return { id, ...d.data() };
+      })
+      .filter(d => !d._placeholder); // skip placeholder docs
   });
   await Promise.all(reads);
 
