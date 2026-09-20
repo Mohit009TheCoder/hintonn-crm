@@ -14,8 +14,6 @@ export {
   deleteItem,
   initDb,
   reloadDb,
-  isSupabaseConfigured,
-  getSupabaseClient,
   COLLECTIONS,
   SINGLETON_KEYS,
 } from './firestore.js';

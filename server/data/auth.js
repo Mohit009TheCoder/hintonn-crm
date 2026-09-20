@@ -1,7 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getDb, saveDb, insertItem, isSupabaseConfigured, getSupabaseClient } from './db.js';
-import { fromDbRecord } from './supabase.js';
+import { getDb, saveDb, insertItem } from './db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hintonn-crm-secret-key-change-in-production';
 const JWT_EXPIRY = '7d';
@@ -57,24 +56,7 @@ export async function loginUser({ identifier, password }) {
     u.email?.toLowerCase() === cleanIdentifier.toLowerCase() || u.phone === cleanIdentifier
   );
 
-  // If not found in cache, query Supabase directly
-  if (!user && isSupabaseConfigured()) {
-    try {
-      const client = getSupabaseClient();
-      if (client) {
-        const { data } = await client.from('users').select('*').or(`email.ilike.${cleanIdentifier},phone.eq.${cleanIdentifier}`).limit(1);
-        if (data && data.length > 0) {
-          user = fromDbRecord(data[0]);
-          if (!db.users) db.users = [];
-          const idx = db.users.findIndex(u => u.id === user.id);
-          if (idx >= 0) db.users[idx] = user;
-          else db.users.push(user);
-        }
-      }
-    } catch (err) {
-      console.error('Supabase live user lookup error:', err.message);
-    }
-  }
+
 
   if (!user) throw new Error('Invalid credentials');
   if (!user.isActive) throw new Error('Account is deactivated');
