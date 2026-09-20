@@ -8,6 +8,7 @@ const COMMON_CONFIGS = ['1 BHK', '2 BHK', '3 BHK', '4 BHK', 'Penthouse', 'Office
 export default function AddProjectModal({ onClose }) {
   const { addProject } = useCRM();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const [name, setName] = useState('');
   const [type, setType] = useState('Residential');
@@ -35,7 +36,24 @@ export default function AddProjectModal({ onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !loc.trim()) return;
+    setError('');
+
+    if (!name.trim()) return setError('Project name is required.');
+    if (!loc.trim()) return setError('Location is required.');
+    if (selectedConfigs.length === 0) return setError('Please select at least one configuration.');
+    
+    if (Number(priceMin) < 0 || Number(priceMax) < 0) {
+      return setError('Prices cannot be negative.');
+    }
+    if (Number(priceMax) < Number(priceMin)) {
+      return setError('Max price cannot be less than Min price.');
+    }
+    
+    if (Number(totalUnits) < 1) return setError('Total units must be at least 1.');
+    if (Number(available) < 0) return setError('Available units cannot be negative.');
+    if (Number(available) > Number(totalUnits)) {
+      return setError('Available units cannot exceed total units.');
+    }
 
     setLoading(true);
     await addProject({
@@ -226,6 +244,12 @@ export default function AddProjectModal({ onClose }) {
           </div>
 
           {/* Actions */}
+          {error && (
+            <div className="px-3 py-2.5 bg-[#FEE2E2] text-[#DC2626] text-[12px] font-semibold rounded-[8px] flex items-center gap-2">
+              <Icon name="alerttriangle" size={15} />
+              {error}
+            </div>
+          )}
           <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-end gap-2.5">
             <button
               type="button"
