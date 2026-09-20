@@ -202,7 +202,10 @@ app.get('/api/search', authenticate, (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST'
+  });
 });
 
 // Global error handler
