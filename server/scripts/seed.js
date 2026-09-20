@@ -36,7 +36,7 @@ try {
   console.log('🔧 Firebase already initialized by imported modules');
 }
 
-const db = getFirestore();
+const db = getFirestore('default');
 try { db.settings({ ignoreUndefinedProperties: true }); } catch(e) { /* already configured */ }
 
 async function seedCollection(name, items, idField = 'id') {

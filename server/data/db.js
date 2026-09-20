@@ -1,7 +1,6 @@
 /**
  * db.js — Main Database Persistence Engine re-export.
- * Connects to Supabase when credentials are configured, or seamlessly falls back to
- * local persistent JSON storage.
+ * Connects to Firebase Firestore when emulator/cloud is configured.
  *
  * All routes import from this file; zero changes required in any route handlers.
  */
@@ -17,4 +16,6 @@ export {
   reloadDb,
   isSupabaseConfigured,
   getSupabaseClient,
-} from './supabase.js';
+  COLLECTIONS,
+  SINGLETON_KEYS,
+} from './firestore.js';

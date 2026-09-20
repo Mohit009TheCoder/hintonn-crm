@@ -1,7 +1,7 @@
 /**
  * Firestore-backed persistence engine.
  * Drop-in replacement for the old JSON-file db.js.
- * Exports the same API: getDb, saveDb, getCollection, insertItem, updateItem, deleteItem
+ * Exports the same API: getDb, saveDb, getCollection, insertItem, asyncInsertItem, updateItem, deleteItem
  *
  * Modes:
  *   Emulator (local dev): set FIRESTORE_EMULATOR_HOST=localhost:8082
@@ -19,36 +19,38 @@ const __dirname = dirname(__filename);
 const isEmulator = !!process.env.FIRESTORE_EMULATOR_HOST;
 const projectId = process.env.FIREBASE_PROJECT_ID || 'demo-hintonn-crm';
 
-if (isEmulator) {
-  // Emulator mode — no real credentials needed
-  admin.initializeApp({ projectId });
-  console.log(`🔧 Firestore EMULATOR mode → ${process.env.FIRESTORE_EMULATOR_HOST}`);
-} else {
-  // Cloud mode — service account required
-  const saPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || join(__dirname, '..', 'service-account.json');
-  if (!existsSync(saPath)) {
-    console.error('❌ No service account found. Set FIRESTORE_EMULATOR_HOST for local dev, or provide service-account.json for cloud.');
-    process.exit(1);
+if (admin.getApps().length === 0) {
+  if (isEmulator) {
+    // Emulator mode — no real credentials needed
+    admin.initializeApp({ projectId });
+    console.log(`🔧 Firestore EMULATOR mode → ${process.env.FIRESTORE_EMULATOR_HOST}`);
+  } else {
+    // Cloud mode — service account required
+    const saPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || join(__dirname, '..', 'service-account.json');
+    if (!existsSync(saPath)) {
+      console.error('❌ No service account found. Set FIRESTORE_EMULATOR_HOST for local dev, or provide service-account.json for cloud.');
+      process.exit(1);
+    }
+    const sa = JSON.parse(readFileSync(saPath, 'utf8'));
+    admin.initializeApp({ credential: cert(sa), projectId: sa.project_id });
+    console.log('☁️  Firestore CLOUD mode →', sa.project_id);
   }
-  const sa = JSON.parse(readFileSync(saPath, 'utf8'));
-  admin.initializeApp({ credential: cert(sa), projectId: sa.project_id });
-  console.log('☁️  Firestore CLOUD mode →', sa.project_id);
 }
 
-const db = getFirestore();
+const db = getFirestore('default');
 db.settings({ ignoreUndefinedProperties: true });
 
 // ── Collection names that map 1:1 to the old db.json keys ───────────────────
-const COLLECTIONS = [
+export const COLLECTIONS = [
   'contacts', 'projects', 'calls', 'partners', 'tasks',
   'siteVisits', 'broadcasts', 'sequences', 'team',
   'brochures', 'notifications', 'stages',
   'leadSources', 'nurtureSequences', 'nurtureLog', 'slaAlerts', 'leadActivities',
-  'paymentMilestones', 'users',
+  'paymentMilestones', 'users', 'duplicateLeads'
 ];
 
 // Singleton documents stored under a fixed doc ID inside their collection
-const SINGLETON_KEYS = ['settings', 'simulation'];
+export const SINGLETON_KEYS = ['settings', 'simulation'];
 
 // ── In-memory cache ─────────────────────────────────────────────────────────
 let cache = null;
@@ -184,6 +186,29 @@ export function insertItem(collectionName, item) {
 }
 
 /**
+ * asyncInsertItem(collectionName, item) — async version of insertItem.
+ */
+export async function asyncInsertItem(collectionName, item) {
+  const c = getDb();
+  if (!c[collectionName]) c[collectionName] = [];
+
+  let newItem = { ...item, createdAt: new Date().toISOString() };
+
+  const nextId = c[collectionName].length > 0
+    ? Math.max(...c[collectionName].map(i => Number(i.id) || 0)) + 1
+    : 1;
+  newItem.id = nextId;
+  c[collectionName].unshift(newItem);
+
+  // Write to Firestore
+  const { id, ...data } = newItem;
+  await db.collection(collectionName).doc(String(id)).set(data)
+    .catch(err => console.error(`asyncInsertItem ${collectionName}/${id} error:`, err.message));
+
+  return newItem;
+}
+
+/**
  * updateItem(collectionName, id, patch) — updates cache + writes to Firestore.
  */
 export function updateItem(collectionName, id, patch) {
@@ -218,6 +243,15 @@ export function deleteItem(collectionName, id) {
     .catch(err => console.error(`deleteItem ${collectionName}/${id} error:`, err.message));
 
   return true;
+}
+
+// Compat stubs for routes that check Supabase
+export function isSupabaseConfigured() {
+  return false;
+}
+
+export function getSupabaseClient() {
+  return null;
 }
 
 export { db as firestoreDb, admin as firebaseAdmin };
