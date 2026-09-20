@@ -7,20 +7,10 @@ export const STAGES = [
   { id: 'lost', name: 'Lost' },
 ];
 
-export const TEAM = [
-  { id: 1, name: 'Rohan Mehta', role: 'Sales Head', email: 'rohan@ashraygroup.in', phone: '+91 98250 00001', leadsCount: 4 },
-  { id: 2, name: 'Ananya Iyer', role: 'Senior Consultant', email: 'ananya@ashraygroup.in', phone: '+91 98250 00002', leadsCount: 3 },
-  { id: 3, name: 'Karan Thakkar', role: 'Luxury Specialist', email: 'karan@ashraygroup.in', phone: '+91 98250 00003', leadsCount: 3 },
-  { id: 4, name: 'Simran Kaur', role: 'Sales Executive', email: 'simran@ashraygroup.in', phone: '+91 98250 00004', leadsCount: 2 },
-  { id: 5, name: 'Devika Shah', role: 'Associate', email: 'devika@ashraygroup.in', phone: '+91 98250 00005', leadsCount: 2 }
-];
+export const TEAM = [];
 
 export const RAW_USERS = [
-  { id: 1, name: 'Rohan Mehta', email: 'rohan@ashraygroup.in', phone: '+919825000001', role: 'admin', isActive: true },
-  { id: 2, name: 'Ananya Iyer', email: 'ananya@ashraygroup.in', phone: '+919825000002', role: 'manager', isActive: true },
-  { id: 3, name: 'Karan Thakkar', email: 'karan@ashraygroup.in', phone: '+919825000003', role: 'agent', isActive: true },
-  { id: 4, name: 'Simran Kaur', email: 'simran@ashraygroup.in', phone: '+919825000004', role: 'agent', isActive: true },
-  { id: 5, name: 'Devika Shah', email: 'devika@ashraygroup.in', phone: '+919825000005', role: 'viewer', isActive: true }
+  { id: 1, name: 'Admin', email: 'admin@hintonn.com', phone: '+919999999999', role: 'admin', isActive: true }
 ];
 
 export const RAW_PROJECTS = [
