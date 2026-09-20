@@ -15,18 +15,20 @@ export default function CalendarView({ onOpenAddTask, onOpenScheduleVisit, onSel
   const toast = useToast();
 
   const [taskFilter, setTaskFilter] = useState('all');
-  const [currentMonth, setCurrentMonth] = useState(8); // 8 = September (0-indexed)
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [selectedDay, setSelectedDay] = useState(18); // Default to Today (Sep 18)
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [selectedDay, setSelectedDay] = useState(today.getDate());
   const [viewMode, setViewMode] = useState('split'); // 'split' (List + Mini) or 'month' (Full Grid)
 
   // Day number extractors
   const getTaskDay = (t) => {
     if (!t.due) return null;
     const due = t.due.toLowerCase();
-    if (due.includes('today')) return 18;
-    if (due.includes('tomorrow')) return 19;
-    if (due.includes('yesterday')) return 17;
+    const d = new Date();
+    if (due.includes('today')) return d.getDate();
+    if (due.includes('tomorrow')) { d.setDate(d.getDate() + 1); return d.getDate(); }
+    if (due.includes('yesterday')) { d.setDate(d.getDate() - 1); return d.getDate(); }
     const match = t.due.match(/Sep\s+(\d+)/i);
     if (match) return parseInt(match[1], 10);
     return null;
@@ -35,9 +37,10 @@ export default function CalendarView({ onOpenAddTask, onOpenScheduleVisit, onSel
   const getVisitDay = (sv) => {
     if (!sv.scheduledDate) return null;
     const date = sv.scheduledDate.toLowerCase();
-    if (date.includes('today')) return 18;
-    if (date.includes('tomorrow')) return 19;
-    if (date.includes('yesterday')) return 17;
+    const d = new Date();
+    if (date.includes('today')) return d.getDate();
+    if (date.includes('tomorrow')) { d.setDate(d.getDate() + 1); return d.getDate(); }
+    if (date.includes('yesterday')) { d.setDate(d.getDate() - 1); return d.getDate(); }
     const match = sv.scheduledDate.match(/Sep\s+(\d+)/i);
     if (match) return parseInt(match[1], 10);
     return null;
@@ -83,11 +86,15 @@ export default function CalendarView({ onOpenAddTask, onOpenScheduleVisit, onSel
         return t.status !== 'completed' && t.due && t.due.includes('Today');
       }
       if (taskFilter === 'today') {
-        return getTaskDay(t) === 18;
+        return getTaskDay(t) === new Date().getDate();
       }
       if (taskFilter === 'this-week') {
         const d = getTaskDay(t);
-        return d && d >= 14 && d <= 20;
+        if (!d) return false;
+        const now = new Date();
+        const start = now.getDate() - now.getDay(); // Sunday
+        const end = start + 6; // Saturday
+        return d >= start && d <= end;
       }
       if (taskFilter === 'completed') {
         return t.status === 'completed';
@@ -140,9 +147,10 @@ export default function CalendarView({ onOpenAddTask, onOpenScheduleVisit, onSel
   };
 
   const handleGoToday = () => {
-    setCurrentMonth(8);
-    setCurrentYear(2026);
-    setSelectedDay(18);
+    const today = new Date();
+    setCurrentMonth(today.getMonth());
+    setCurrentYear(today.getFullYear());
+    setSelectedDay(today.getDate());
     setTaskFilter('all');
   };
 
@@ -445,7 +453,8 @@ export default function CalendarView({ onOpenAddTask, onOpenScheduleVisit, onSel
                 {/* Current month days */}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
-                  const isToday = currentMonth === 8 && currentYear === 2026 && day === 18;
+                  const todayDate = new Date();
+                  const isToday = currentMonth === todayDate.getMonth() && currentYear === todayDate.getFullYear() && day === todayDate.getDate();
                   const isSelected = selectedDay === day;
                   const dayEvents = eventsByDay[day] || { tasks: [], visits: [] };
                   const hasTasks = dayEvents.tasks.length > 0;
@@ -612,7 +621,8 @@ export default function CalendarView({ onOpenAddTask, onOpenScheduleVisit, onSel
               {/* Current month days */}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
-                const isToday = currentMonth === 8 && currentYear === 2026 && day === 18;
+                const todayDate = new Date();
+                const isToday = currentMonth === todayDate.getMonth() && currentYear === todayDate.getFullYear() && day === todayDate.getDate();
                 const isSelected = selectedDay === day;
                 const dayEvents = eventsByDay[day] || { tasks: [], visits: [] };
 
