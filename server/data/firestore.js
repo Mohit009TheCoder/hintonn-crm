@@ -26,12 +26,24 @@ if (getApps().length === 0) {
     console.log(`🔧 Firestore EMULATOR mode → ${process.env.FIRESTORE_EMULATOR_HOST}`);
   } else {
     // Cloud mode — service account required
-    const saPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || join(__dirname, '..', 'service-account.json');
-    if (!existsSync(saPath)) {
-      console.error('❌ No service account found. Set FIRESTORE_EMULATOR_HOST for local dev, or provide service-account.json for cloud.');
-      process.exit(1);
+    let sa;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      try {
+        sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      } catch (e) {
+        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT env var:', e.message);
+      }
     }
-    const sa = JSON.parse(readFileSync(saPath, 'utf8'));
+
+    if (!sa) {
+      const saPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || join(__dirname, '..', 'service-account.json');
+      if (!existsSync(saPath)) {
+        console.error('❌ No service account found. Set FIRESTORE_EMULATOR_HOST for local dev, or provide service-account.json for cloud.');
+        process.exit(1);
+      }
+      sa = JSON.parse(readFileSync(saPath, 'utf8'));
+    }
+
     initializeApp({ credential: cert(sa), projectId: sa.project_id });
     console.log('☁️  Firestore CLOUD mode →', sa.project_id);
   }
