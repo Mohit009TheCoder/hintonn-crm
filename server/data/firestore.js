@@ -245,13 +245,4 @@ export function deleteItem(collectionName, id) {
   return true;
 }
 
-// Compat stubs for routes that check Supabase
-export function isSupabaseConfigured() {
-  return false;
-}
-
-export function getSupabaseClient() {
-  return null;
-}
-
 export { db as firestoreDb };

@@ -139,15 +139,6 @@ async function loadFromLocalDb() {
 
 // ── Database Lifecycle Methods ──────────────────────────────────────────────
 
-// Mocked out so routes don't break
-export function isSupabaseConfigured() {
-  return false;
-}
-
-export function getSupabaseClient() {
-  return null;
-}
-
 export async function initDb() {
   cache = await loadFromLocalDb();
   cacheLoaded = true;
