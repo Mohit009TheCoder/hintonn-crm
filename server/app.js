@@ -63,7 +63,7 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // Rate limiting
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later' },
@@ -71,7 +71,7 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 30, // Increased from 5 to 30 for easier testing
+  max: 100, // Increased for easier testing
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many login attempts, please try again in 1 minute' },

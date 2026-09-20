@@ -87,7 +87,7 @@ async function loadAllFromFirestore() {
         const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
         return { id, ...d.data() };
       })
-      .filter(d => !d._placeholder); // skip placeholder docs
+      .filter(d => !d._placeholder && !d._isHidden && !d._schema); // skip placeholder, hidden init docs, and schema definitions
 
     result[colName] = docs;
     for (const item of docs) {

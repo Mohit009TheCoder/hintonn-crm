@@ -45,7 +45,9 @@ export default function Overview({ onOpenAddLead, onSelectLead, onViewChange }) 
   const openLeads = leads.filter(l => ['new', 'contacted', 'qualified', 'negotiation'].includes(l.stage));
   const openPipelineValue = openLeads.reduce((s, l) => s + (l.value || 0), 0);
   const overdueLeads = leads.filter(l => l.stage === 'new' && (l.createdMinutesAgo || 0) > 15);
-  const newLeadsCount = leads.filter(l => l.stage === 'new').length;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const newLeadsCount = leads.filter(l => l.createdAt && new Date(l.createdAt) >= todayStart).length;
   const wonLeads = leads.filter(l => l.stage === 'won');
   const convRate = leads.length > 0 ? Math.round((wonLeads.length / leads.length) * 100) : 0;
   const callsToday = calls.filter(c => c.time && c.time.includes('Today')).length;
