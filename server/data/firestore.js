@@ -67,6 +67,7 @@ export const SINGLETON_KEYS = ['settings', 'simulation'];
 // ── In-memory cache ─────────────────────────────────────────────────────────
 let cache = null;
 let cacheLoaded = false;
+let cacheStrings = {};
 
 /**
  * Load all collections from Firestore into the in-memory cache.
@@ -75,17 +76,23 @@ let cacheLoaded = false;
  */
 async function loadAllFromFirestore() {
   const result = {};
+  cacheStrings = {};
 
   // Load regular collections (arrays of docs)
   const reads = COLLECTIONS.map(async (colName) => {
     const snap = await db.collection(colName).get();
-    result[colName] = snap.docs
+    const docs = snap.docs
       .map(d => {
         const rawId = d.id;
         const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
         return { id, ...d.data() };
       })
       .filter(d => !d._placeholder); // skip placeholder docs
+
+    result[colName] = docs;
+    for (const item of docs) {
+      cacheStrings[`${colName}_${item.id}`] = JSON.stringify(item);
+    }
   });
   await Promise.all(reads);
 
@@ -150,14 +157,26 @@ export function saveDb() {
     const colRef = db.collection(colName);
     for (const item of items) {
       const docId = String(item.id);
-      const { id, ...data } = item;
-      writes.push(colRef.doc(docId).set(data, { merge: true }));
+      const currentStr = JSON.stringify(item);
+      const cacheKey = `${colName}_${docId}`;
+      
+      if (cacheStrings[cacheKey] !== currentStr) {
+        const { id, ...data } = item;
+        writes.push(colRef.doc(docId).set(data, { merge: true }));
+        cacheStrings[cacheKey] = currentStr; // update snapshot
+      }
     }
   }
 
   for (const key of SINGLETON_KEYS) {
     if (cache[key] && typeof cache[key] === 'object' && Object.keys(cache[key]).length > 0) {
-      writes.push(db.collection(key).doc('_default').set(cache[key], { merge: true }));
+      const currentStr = JSON.stringify(cache[key]);
+      const cacheKey = `singleton_${key}`;
+      
+      if (cacheStrings[cacheKey] !== currentStr) {
+        writes.push(db.collection(key).doc('_default').set(cache[key], { merge: true }));
+        cacheStrings[cacheKey] = currentStr; // update snapshot
+      }
     }
   }
 
@@ -193,6 +212,8 @@ export function insertItem(collectionName, item) {
   db.collection(collectionName).doc(String(id)).set(data)
     .catch(err => console.error(`insertItem ${collectionName}/${id} error:`, err.message));
 
+  cacheStrings[`${collectionName}_${newItem.id}`] = JSON.stringify(newItem);
+  
   return newItem;
 }
 
@@ -216,6 +237,8 @@ export async function asyncInsertItem(collectionName, item) {
   await db.collection(collectionName).doc(String(id)).set(data)
     .catch(err => console.error(`asyncInsertItem ${collectionName}/${id} error:`, err.message));
 
+  cacheStrings[`${collectionName}_${newItem.id}`] = JSON.stringify(newItem);
+  
   return newItem;
 }
 
@@ -235,6 +258,8 @@ export function updateItem(collectionName, id, patch) {
   db.collection(collectionName).doc(String(id)).set(data, { merge: true })
     .catch(err => console.error(`updateItem ${collectionName}/${id} error:`, err.message));
 
+  cacheStrings[`${collectionName}_${list[idx].id}`] = JSON.stringify(list[idx]);
+  
   return list[idx];
 }
 
