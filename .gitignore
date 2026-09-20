@@ -26,3 +26,4 @@ Thumbs.db
 .idea/
 .vercel
 server/data/local-db.json
+.env*
