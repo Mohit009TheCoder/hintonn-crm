@@ -12,13 +12,14 @@ export const MESSAGE_TEMPLATES = {
       delayHours: 0,   // Send immediately on lead creation
       label: 'Welcome & Project Info',
       template: (lead, project) => {
+        const p = project || { name: 'Our Upcoming Project', priceMin: 0, loc: 'prime location', possession: 'Soon', available: 10 };
         const first = lead.name.split(' ')[0];
-        const priceStr = fmtPrice(project.priceMin);
+        const priceStr = fmtPrice(p.priceMin);
         return [
-          `Hi ${first}! 👋 Thank you for your interest in *${project.name}* by Ashray Group.`,
+          `Hi ${first}! 👋 Thank you for your interest in *${p.name}* by Ashray Group.`,
           ``,
-          `We have *${lead.config}* options starting from *${priceStr}* at ${project.loc}.`,
-          `Possession: *${project.possession}*`,
+          `We have *${lead.config}* options starting from *${priceStr}* at ${p.loc}.`,
+          `Possession: *${p.possession}*`,
           ``,
           `Would you like to schedule a site visit this week? Reply *YES* and we'll arrange everything for you! 🏠`
         ].join('\n');
