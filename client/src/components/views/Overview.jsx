@@ -97,7 +97,12 @@ export default function Overview({ onOpenAddLead, onSelectLead, onViewChange }) 
       label: 'Tasks due today',
       val: String(tasksDueToday),
       delta: 'live',
-      spark: tasksDueToday > 0 ? [1, 2, tasksDueToday] : [0, 0, 0, 0]
+    },
+    {
+      label: 'Active projects',
+      val: String(projects.length),
+      delta: 'live',
+      spark: projects.length > 0 ? [1, projects.length] : [0, 0, 0, 0]
     }
   ];
 
