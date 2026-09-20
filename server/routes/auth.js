@@ -44,22 +44,6 @@ router.use(authenticate);
 router.get('/me', async (req, res) => {
   const db = getDb();
   let user = (db.users || []).find(u => u.id === req.user.id);
-  if (!user && isSupabaseConfigured()) {
-    try {
-      const client = getSupabaseClient();
-      if (client) {
-        const { data } = await client.from('users').select('*').eq('id', req.user.id).limit(1);
-        if (data && data.length > 0) {
-          const { fromDbRecord } = await import('../data/supabase.js');
-          user = fromDbRecord(data[0]);
-          if (!db.users) db.users = [];
-          db.users.push(user);
-        }
-      }
-    } catch (e) {
-      console.error('/me lookup error:', e.message);
-    }
-  }
   if (!user) return res.status(404).json({ success: false, message: 'User not found' });
   const { passwordHash, ...safeUser } = user;
   res.json({ success: true, data: safeUser });
