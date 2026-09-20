@@ -22,11 +22,11 @@ export function validate(req, res, next) {
 // ── Lead validation ──────────────────────────────────────────────────────────
 export const validateLead = [
   body('name').trim().notEmpty().withMessage('Name is required').isLength({ max: 200 }).withMessage('Name too long'),
-  body('phone').optional().trim().matches(/^[\d\s\-+()]{7,20}$/).withMessage('Invalid phone number'),
-  body('email').optional().trim().isEmail().withMessage('Invalid email').normalizeEmail(),
-  body('budget').optional().isNumeric().withMessage('Budget must be a number'),
-  body('stage').optional().isIn(['new', 'contacted', 'qualified', 'negotiation', 'won', 'lost']).withMessage('Invalid stage'),
-  body('tags').optional().isArray().withMessage('Tags must be an array'),
+  body('phone').optional({ checkFalsy: true }).trim().matches(/^[\d\s\-+()]{7,20}$/).withMessage('Invalid phone number'),
+  body('email').optional({ checkFalsy: true }).trim().isEmail().withMessage('Invalid email').normalizeEmail(),
+  body('budget').optional({ checkFalsy: true }).isNumeric().withMessage('Budget must be a number'),
+  body('stage').optional({ checkFalsy: true }).isIn(['new', 'contacted', 'qualified', 'negotiation', 'won', 'lost']).withMessage('Invalid stage'),
+  body('tags').optional({ checkFalsy: true }).isArray().withMessage('Tags must be an array'),
   validate,
 ];
 
