@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { initDb, getDb, saveDb } from './data/firestore.js';
 import { triggerWelcomeMessage } from './data/automation.js';
 
@@ -7,7 +8,7 @@ async function main() {
   const preet = db.contacts.find(c => c.name.toLowerCase().includes('preet'));
   if (preet) {
     console.log('Found Preet, triggering welcome message manually...');
-    await triggerWelcomeMessage(preet);
+    console.log(preet.waLog);
     saveDb();
     console.log('Fixed Preet!');
   } else {
