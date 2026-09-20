@@ -10,6 +10,7 @@ import { body, param, query, validationResult } from 'express-validator';
 export function validate(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
@@ -33,33 +34,33 @@ export const validateLead = [
 // ── Partner validation ───────────────────────────────────────────────────────
 export const validatePartner = [
   body('name').trim().notEmpty().withMessage('Partner name is required').isLength({ max: 200 }),
-  body('company').optional().trim().isLength({ max: 200 }),
-  body('phone').optional().trim().matches(/^[\d\s\-+()]{7,20}$/).withMessage('Invalid phone number'),
-  body('email').optional().trim().isEmail().withMessage('Invalid email').normalizeEmail(),
-  body('rating').optional().isInt({ min: 1, max: 5 }).withMessage('Rating must be 1-5'),
+  body('company').optional({ checkFalsy: true }).trim().isLength({ max: 200 }),
+  body('phone').optional({ checkFalsy: true }).trim().matches(/^[\d\s\-+()]{7,20}$/).withMessage('Invalid phone number'),
+  body('email').optional({ checkFalsy: true }).trim().isEmail().withMessage('Invalid email').normalizeEmail(),
+  body('rating').optional({ checkFalsy: true }).isInt({ min: 1, max: 5 }).withMessage('Rating must be 1-5'),
   validate,
 ];
 
 // ── Project validation ───────────────────────────────────────────────────────
 export const validateProject = [
   body('name').trim().notEmpty().withMessage('Project name is required').isLength({ max: 300 }),
-  body('loc').optional().trim().isLength({ max: 300 }),
-  body('type').optional().toLowerCase().isIn(['residential', 'commercial', 'mixed', 'villa', 'plot']).withMessage('Invalid project type'),
+  body('loc').optional({ checkFalsy: true }).trim().isLength({ max: 300 }),
+  body('type').optional({ checkFalsy: true }).toLowerCase().isIn(['residential', 'commercial', 'mixed', 'villa', 'plot']).withMessage('Invalid project type'),
   validate,
 ];
 
 // ── Call log validation ──────────────────────────────────────────────────────
 export const validateCall = [
   body('leadId').notEmpty().withMessage('Lead ID is required'),
-  body('duration').optional().isInt({ min: 0 }).withMessage('Duration must be a positive number'),
-  body('notes').optional().trim().isLength({ max: 2000 }),
+  body('duration').optional({ checkFalsy: true }).isInt({ min: 0 }).withMessage('Duration must be a positive number'),
+  body('notes').optional({ checkFalsy: true }).trim().isLength({ max: 2000 }),
   validate,
 ];
 
 // ── Task validation ──────────────────────────────────────────────────────────
 export const validateTask = [
   body('title').trim().notEmpty().withMessage('Task title is required').isLength({ max: 300 }),
-  body('dueDate').optional().isISO8601().withMessage('Invalid date format'),
+  body('dueDate').optional({ checkFalsy: true }).isISO8601().withMessage('Invalid date format'),
   validate,
 ];
 
@@ -67,7 +68,7 @@ export const validateTask = [
 export const validateSiteVisit = [
   body('leadId').notEmpty().withMessage('Lead ID is required'),
   body('projectId').notEmpty().withMessage('Project ID is required'),
-  body('date').optional().isISO8601().withMessage('Invalid date format'),
+  body('date').optional({ checkFalsy: true }).isISO8601().withMessage('Invalid date format'),
   validate,
 ];
 
