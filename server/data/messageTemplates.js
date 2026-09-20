@@ -306,9 +306,9 @@ export function getNextMessage(lead, project, hoursInStage, remindersSent) {
 
   // Find the next template that matches the delay and hasn't been sent yet
   for (const tmpl of templates) {
-    // Check if this template was already sent
+    // Check if this template was successfully sent
     const alreadySent = (lead.automationLog || []).some(
-      log => log.templateId === tmpl.id
+      log => log.templateId === tmpl.id && log.status === 'sent'
     );
     if (alreadySent) continue;
 
