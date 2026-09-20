@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { getDb } from './data/db.js';
-import { handleWebhookVerification, processInboundWebhook, isWhatsAppConfigured } from './data/automation.js';
+import { handleWebhookVerification, processInboundWebhook, processAutomation, isWhatsAppConfigured } from './data/automation.js';
 import { authenticate } from './middleware/auth.js';
 
 import leadsRouter from './routes/leads.js';
@@ -122,6 +122,19 @@ app.post('/api/whatsapp/webhook', express.json({ verify: (req, res, buf) => { re
     console.error('WhatsApp webhook error:', err.message);
     res.status(200).json({ status: 'ok' });
   }
+});
+
+// Lazy automation — process due messages on API activity (throttled to once/hour)
+let lastAutomationRun = 0;
+const AUTOMATION_INTERVAL = 60 * 60 * 1000; // 1 hour
+app.use('/api/', (req, res, next) => {
+  if (isWhatsAppConfigured() && Date.now() - lastAutomationRun > AUTOMATION_INTERVAL) {
+    lastAutomationRun = Date.now();
+    processAutomation().catch(err =>
+      console.error('Lazy automation error:', err.message)
+    );
+  }
+  next();
 });
 
 // API Routes
