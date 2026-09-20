@@ -16,7 +16,8 @@ export default function SettingsView() {
 
   const fetchTeamMembers = useCallback(async () => {
     try {
-      const res = await fetch('/api/auth/users', {
+      const API_BASE = (typeof __API_URL__ !== 'undefined' && __API_URL__) ? __API_URL__ : '';
+      const res = await fetch(`${API_BASE}/api/auth/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

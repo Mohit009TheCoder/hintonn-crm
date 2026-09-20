@@ -66,10 +66,11 @@ export default function Header({ onToggleSidebar, onSelectLead, onViewChange, on
       setSearchResults(null);
       return;
     }
+    const API_BASE = (typeof __API_URL__ !== 'undefined' && __API_URL__) ? __API_URL__ : '';
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, {
+        const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(searchQuery)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

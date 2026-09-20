@@ -92,7 +92,8 @@ export default function LoginView() {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/forgot-password', {
+      const API_BASE = (typeof __API_URL__ !== 'undefined' && __API_URL__) ? __API_URL__ : '';
+      const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail.trim() }),
@@ -122,7 +123,8 @@ export default function LoginView() {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/reset-password', {
+      const API_BASE = (typeof __API_URL__ !== 'undefined' && __API_URL__) ? __API_URL__ : '';
+      const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail.trim(), otp: otp.trim(), newPassword: newPassword }),
