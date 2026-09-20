@@ -1,6 +1,5 @@
 import { verifyToken } from '../data/auth.js';
-import { getDb, isSupabaseConfigured, getSupabaseClient } from '../data/db.js';
-import { fromDbRecord } from '../data/supabase.js';
+import { getDb } from '../data/db.js';
 
 // Authenticate JWT token
 export function authenticate(req, res, next) {
@@ -29,24 +28,8 @@ export function authorize(resource, action) {
     const db = getDb();
     let user = (db.users || []).find(u => u.id === req.user.id);
 
-    if (!user && isSupabaseConfigured()) {
-      try {
-        const client = getSupabaseClient();
-        if (client) {
-          const { data } = await client.from('users').select('*').eq('id', req.user.id).limit(1);
-          if (data && data.length > 0) {
-            user = fromDbRecord(data[0]);
-            if (!db.users) db.users = [];
-            db.users.push(user);
-          }
-        }
-      } catch (err) {
-        console.error('Authorize user lookup error:', err.message);
-      }
-    }
-
-    if (!user || !user.isActive) {
-      return res.status(403).json({ success: false, message: 'Account inactive or not found' });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found in system' });
     }
 
     const perms = user.permissions || {};
