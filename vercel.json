@@ -8,8 +8,17 @@
   "functions": {
     "api/index.js": {
       "includeFiles": "server/**"
+    },
+    "api/cron-automation.js": {
+      "includeFiles": "server/**"
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron-automation?secret=hintonn-cron-2026",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
