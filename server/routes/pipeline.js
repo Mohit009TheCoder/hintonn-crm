@@ -57,7 +57,10 @@ router.put('/:id/stage', authorize('pipeline', 'update'), (req, res) => {
 
   const db = getDb();
   const contact = db.contacts.find(c => Number(c.id) === Number(req.params.id));
-  if (!contact) return res.status(404).json({ success: false, message: 'Lead not found' });
+  if (!contact) {
+    console.log(`[DEBUG] pipeline route 404: requested id=${req.params.id}. Available contact IDs: ${db.contacts.map(c => c.id).join(', ')}`);
+    return res.status(404).json({ success: false, message: 'Lead not found' });
+  }
 
   // Agent scoping — agent can only move their own assigned leads
   if (req.user?.role === 'agent') {
