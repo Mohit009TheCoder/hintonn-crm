@@ -27,6 +27,18 @@ export default function LoginView() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('agent');
 
+  // Forgot Password fields
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  // Password visibility toggle
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Real world password validation regex: at least 8 chars, 1 uppercase, 1 lowercase, 1 number
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
+
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError('');
@@ -45,16 +57,16 @@ export default function LoginView() {
   const handleSignUp = async (e) => {
     e.preventDefault();
     setError('');
-    if (!name.trim() || !email.trim() || !password.trim()) {
+    if (!name.trim() || !email.trim() || !regPassword.trim()) {
       setError('Please fill in all required fields.');
       return;
     }
-    if (password !== confirmPassword) {
+    if (regPassword !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!passwordRegex.test(regPassword)) {
+      setError('Password must be at least 8 characters and include uppercase, lowercase, and a number.');
       return;
     }
     setLoading(true);
@@ -62,13 +74,74 @@ export default function LoginView() {
       name: name.trim(),
       email: email.trim(),
       phone: phone.trim(),
-      password,
+      password: regPassword,
       role,
     });
     setLoading(false);
     if (!result.success) {
       setError(result.message);
     }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!forgotEmail.trim()) {
+      setError('Please enter your email.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOtpSent(true);
+      } else {
+        setError(data.message || 'Failed to send OTP.');
+      }
+    } catch (err) {
+      setError('Network error.');
+    }
+    setLoading(false);
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!otp.trim() || !newPassword.trim()) {
+      setError('Please enter the OTP and a new password.');
+      return;
+    }
+    if (!passwordRegex.test(newPassword)) {
+      setError('Password must be at least 8 characters and include uppercase, lowercase, and a number.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim(), otp: otp.trim(), newPassword: newPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTab('signin');
+        setOtpSent(false);
+        setForgotEmail('');
+        setOtp('');
+        setNewPassword('');
+        // Optional: show a success message or let context handle it
+      } else {
+        setError(data.message || 'Failed to reset password.');
+      }
+    } catch (err) {
+      setError('Network error.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -141,17 +214,26 @@ export default function LoginView() {
                   <label className="block text-[12.5px] font-semibold text-[#334155] mb-1.5">
                     Password
                   </label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13.5px] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all"
-                    autoComplete="current-password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13.5px] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all pr-10"
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B] transition-colors"
+                    >
+                      <Icon name={showPassword ? 'eyeoff' : 'eye'} size={16} />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center justify-end">
-                  <button type="button" className="text-[12px] text-[#2563EB] hover:underline font-medium">
+                  <button type="button" onClick={() => { setTab('forgot_password'); setError(''); }} className="text-[12px] text-[#2563EB] hover:underline font-medium">
                     Forgot password?
                   </button>
                 </div>
@@ -164,7 +246,7 @@ export default function LoginView() {
                   {loading ? 'Signing in...' : 'Sign In'}
                 </button>
               </form>
-            ) : (
+            ) : tab === 'signup' ? (
               <form onSubmit={handleSignUp} className="space-y-3.5">
                 <div>
                   <label className="block text-[12.5px] font-semibold text-[#334155] mb-1.5">
@@ -207,20 +289,29 @@ export default function LoginView() {
                     <label className="block text-[12.5px] font-semibold text-[#334155] mb-1.5">
                       Password <span className="text-[#DC2626]">*</span>
                     </label>
-                    <input
-                      type="password"
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13.5px] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13.5px] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B] transition-colors"
+                      >
+                        <Icon name={showPassword ? 'eyeoff' : 'eye'} size={14} />
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[12.5px] font-semibold text-[#334155] mb-1.5">
                       Confirm <span className="text-[#DC2626]">*</span>
                     </label>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
@@ -253,21 +344,88 @@ export default function LoginView() {
                   {loading ? 'Creating account...' : 'Create Account'}
                 </button>
               </form>
-            )}
+            ) : tab === 'forgot_password' ? (
+              <form onSubmit={otpSent ? handleResetPassword : handleForgotPassword} className="space-y-4">
+                <div className="text-[13px] text-[#64748B] mb-4">
+                  {otpSent 
+                    ? "We've sent a 6-digit OTP to your email. Enter it below along with your new password." 
+                    : "Enter your registered email address and we'll send you an OTP to reset your password."}
+                </div>
+                
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-[#334155] mb-1.5">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="john@company.in"
+                    disabled={otpSent}
+                    className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13.5px] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
+                  />
+                </div>
 
-            {/* Demo hint */}
-            <div className="mt-5 pt-4 border-t border-[#E2E8F0] text-center">
-              <div className="text-[11.5px] text-[#94A3B8]">
-                Demo: <span className="font-mono text-[#64748B]">rohan@ashraygroup.in</span> /{' '}
-                <span className="font-mono text-[#64748B]">password123</span>
-              </div>
-            </div>
+                {otpSent && (
+                  <>
+                    <div>
+                      <label className="block text-[12.5px] font-semibold text-[#334155] mb-1.5">
+                        6-Digit OTP
+                      </label>
+                      <input
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        placeholder="123456"
+                        maxLength={6}
+                        className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13.5px] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-mono tracking-widest text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[12.5px] font-semibold text-[#334155] mb-1.5">
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13.5px] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B] transition-colors"
+                        >
+                          <Icon name={showPassword ? 'eyeoff' : 'eye'} size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex items-center justify-between pt-2">
+                  <button type="button" onClick={() => { setTab('signin'); setError(''); }} className="text-[12px] text-[#64748B] hover:text-[#334155] font-medium transition-colors">
+                    Back to Login
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-5 py-2.5 rounded-[10px] text-[13px] font-semibold text-white gradient-bg hover:opacity-90 transition-all disabled:opacity-60 flex items-center gap-2"
+                  >
+                    {loading && <Icon name="loader" size={15} className="animate-spin" />}
+                    {otpSent ? 'Reset Password' : 'Send OTP'}
+                  </button>
+                </div>
+              </form>
+            ) : null}
           </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-6 text-[11px] text-[#94A3B8]">
-          © 2025 Hintonn AI — Built for Real Estate Teams
+          © 2026 Hintonn AI — Built for Real Estate Teams
         </div>
       </div>
     </div>

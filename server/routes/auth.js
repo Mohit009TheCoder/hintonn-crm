@@ -2,6 +2,7 @@ import express from 'express';
 import { registerUser, loginUser, hashPassword } from '../data/auth.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { getDb, updateItem } from '../data/db.js';
+import { sendOtpEmail } from '../services/email.js';
 
 const router = express.Router();
 
@@ -32,6 +33,72 @@ router.post('/login', async (req, res) => {
     res.json({ success: true, data: result });
   } catch (err) {
     res.status(401).json({ success: false, message: err.message });
+  }
+});
+
+// ── POST /api/auth/forgot-password — Request Password Reset OTP ──────────────
+
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+    const db = getDb();
+    const user = (db.users || []).find(u => u.email === email);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Save OTP to user
+    await updateItem('users', user.id, { resetOtp: otp, resetOtpExpires: otpExpires });
+
+    // Send email
+    await sendOtpEmail(user.email, otp);
+
+    res.json({ success: true, message: 'OTP sent successfully' });
+  } catch (err) {
+    console.error('Forgot Password Error:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// ── POST /api/auth/reset-password — Verify OTP and set new password ────────
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email, OTP, and new password are required' });
+    }
+
+    const db = getDb();
+    const user = (db.users || []).find(u => u.email === email);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    if (user.resetOtp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    if (Date.now() > user.resetOtpExpires) {
+      return res.status(400).json({ success: false, message: 'OTP has expired' });
+    }
+
+    // Valid OTP, hash new password
+    const passwordHash = await hashPassword(newPassword);
+
+    // Update user and clear OTP
+    await updateItem('users', user.id, { 
+      passwordHash,
+      resetOtp: null,
+      resetOtpExpires: null 
+    });
+
+    res.json({ success: true, message: 'Password reset successfully' });
+  } catch (err) {
+    console.error('Reset Password Error:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
