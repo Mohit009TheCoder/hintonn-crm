@@ -142,10 +142,12 @@ export async function reloadDb() {
   return cache;
 }
 
+// Track pending writes so flushDb() can await them
+let pendingWrites = [];
+
 /**
  * saveDb() — writes the entire in-memory cache back to Firestore.
- * Used by routes that mutate the cache directly (pipeline, whatsapp simulation, etc.)
- * Writes each collection in parallel for speed.
+ * Used by routes that mutate the cache directly.
  */
 export function saveDb() {
   if (!cache) return;
@@ -162,8 +164,10 @@ export function saveDb() {
       
       if (cacheStrings[cacheKey] !== currentStr) {
         const { id, ...data } = item;
-        writes.push(colRef.doc(docId).set(data, { merge: true }));
-        cacheStrings[cacheKey] = currentStr; // update snapshot
+        const writePromise = colRef.doc(docId).set(data, { merge: true })
+          .then(() => { cacheStrings[cacheKey] = currentStr; })
+          .catch(err => console.error(`saveDb ${colName}/${docId} error:`, err.message));
+        writes.push(writePromise);
       }
     }
   }
@@ -174,54 +178,33 @@ export function saveDb() {
       const cacheKey = `singleton_${key}`;
       
       if (cacheStrings[cacheKey] !== currentStr) {
-        writes.push(db.collection(key).doc('_default').set(cache[key], { merge: true }));
-        cacheStrings[cacheKey] = currentStr; // update snapshot
+        const writePromise = db.collection(key).doc('_default').set(cache[key], { merge: true })
+          .then(() => { cacheStrings[cacheKey] = currentStr; })
+          .catch(err => console.error(`saveDb singleton ${key} error:`, err.message));
+        writes.push(writePromise);
       }
     }
   }
 
-  // Fire-and-forget — routes expect saveDb() to be synchronous
-  Promise.all(writes).catch(err => console.error('saveDb write error:', err.message));
+  // Track pending writes for flushDb()
+  if (writes.length > 0) {
+    const batch = Promise.all(writes);
+    pendingWrites.push(batch);
+    batch.finally(() => {
+      pendingWrites = pendingWrites.filter(w => w !== batch);
+    });
+  }
 }
 
 /**
- * flushDb() — async version that awaits all writes.
+ * flushDb() — awaits all pending writes to Firestore.
  * Use during server shutdown to ensure no data is lost.
  */
 export async function flushDb() {
-  if (!cache) return;
-  const writes = [];
-
-  for (const colName of COLLECTIONS) {
-    const items = cache[colName];
-    if (!Array.isArray(items)) continue;
-    const colRef = db.collection(colName);
-    for (const item of items) {
-      const docId = String(item.id);
-      const currentStr = JSON.stringify(item);
-      const cacheKey = `${colName}_${docId}`;
-      if (cacheStrings[cacheKey] !== currentStr) {
-        const { id, ...data } = item;
-        writes.push(colRef.doc(docId).set(data, { merge: true }));
-        cacheStrings[cacheKey] = currentStr;
-      }
-    }
-  }
-
-  for (const key of SINGLETON_KEYS) {
-    if (cache[key] && typeof cache[key] === 'object' && Object.keys(cache[key]).length > 0) {
-      const currentStr = JSON.stringify(cache[key]);
-      const cacheKey = `singleton_${key}`;
-      if (cacheStrings[cacheKey] !== currentStr) {
-        writes.push(db.collection(key).doc('_default').set(cache[key], { merge: true }));
-        cacheStrings[cacheKey] = currentStr;
-      }
-    }
-  }
-
-  if (writes.length > 0) {
-    await Promise.all(writes);
-    console.log(`💾 Flushed ${writes.length} pending writes to Firestore`);
+  if (pendingWrites.length > 0) {
+    await Promise.all(pendingWrites);
+    console.log(`💾 Flushed ${pendingWrites.length} pending write batch(es) to Firestore`);
+    pendingWrites = [];
   }
 }
 
