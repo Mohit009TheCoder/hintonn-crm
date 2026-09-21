@@ -22,6 +22,7 @@ import {
   parseInboundWebhook,
   normalizePhone,
 } from '../data/whatsapp-api.js';
+import { handleSiteVisitReply, sendAutoReply } from '../data/siteVisitAutoReply.js';
 
 /**
  * Send a message via WhatsApp (direct Meta API)
@@ -316,8 +317,9 @@ export function handleIncomingMessage(leadId, messageText, direction = 'in', met
 
 /**
  * Process inbound messages from the Meta webhook
+ * Now includes site visit auto-reply flow detection
  */
-export function processInboundWebhook(body) {
+export async function processInboundWebhook(body) {
   const messages = parseInboundWebhook(body);
   const db = getDb();
   const results = [];
@@ -337,6 +339,7 @@ export function processInboundWebhook(body) {
       continue;
     }
 
+    // Store the inbound message
     const msg = handleIncomingMessage(lead.id, inbound.text, 'in', inbound.messageId);
     if (msg) {
       results.push({
@@ -346,6 +349,33 @@ export function processInboundWebhook(body) {
         senderName: inbound.name,
       });
       console.log(`📩 Inbound from ${lead.name}: "${inbound.text.substring(0, 50)}"`);
+    }
+
+    // ── Site Visit Auto-Reply Flow ──────────────────────────────────────────
+    // Check if this message is part of a site visit conversation
+    try {
+      const svResult = handleSiteVisitReply(lead, inbound.text);
+      if (svResult.handled && svResult.reply) {
+        console.log(`🤖 Auto-reply to ${lead.name}: ${svResult.action}`);
+        const sendResult = await sendAutoReply(lead, svResult.reply);
+        if (sendResult.success) {
+          console.log(`✅ Auto-reply sent to ${lead.name} (${svResult.action})`);
+          results[results.length - 1].autoReply = {
+            action: svResult.action,
+            message: svResult.reply,
+            sent: true
+          };
+        } else {
+          console.error(`❌ Auto-reply failed for ${lead.name}: ${sendResult.error}`);
+          results[results.length - 1].autoReply = {
+            action: svResult.action,
+            sent: false,
+            error: sendResult.error
+          };
+        }
+      }
+    } catch (err) {
+      console.error(`Site visit auto-reply error for ${lead.name}:`, err.message);
     }
   }
 
@@ -425,6 +455,37 @@ export function startAutomationScheduler() {
   }
 
   console.log('⏰ WhatsApp Automation Scheduler started (every 60s) — Meta Cloud API direct');
+
+  // Clean up stale site visit conversation states (every 10 minutes)
+  setInterval(() => {
+    try {
+      const db = getDb();
+      const contacts = db.contacts || [];
+      const now = new Date();
+      let cleaned = 0;
+
+      for (const lead of contacts) {
+        const conv = lead.siteVisitConversation;
+        if (!conv || !conv.startedAt) continue;
+
+        const startedAt = new Date(conv.startedAt);
+        const hoursElapsed = (now - startedAt) / (1000 * 60 * 60);
+
+        // Clear conversations older than 24 hours
+        if (hoursElapsed > 24) {
+          lead.siteVisitConversation = null;
+          cleaned++;
+        }
+      }
+
+      if (cleaned > 0) {
+        console.log(`🧹 Cleaned up ${cleaned} stale site visit conversation(s)`);
+        saveDb();
+      }
+    } catch (err) {
+      console.error('Conversation cleanup error:', err.message);
+    }
+  }, 10 * 60 * 1000);
 
   setInterval(async () => {
     try {

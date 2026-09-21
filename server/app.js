@@ -26,6 +26,7 @@ import postBookingRouter from './routes/postBooking.js';
 import teamAnalyticsRouter from './routes/teamAnalytics.js';
 import documentPipelineRouter from './routes/documentPipeline.js';
 import siteVisitAutoRouter from './routes/siteVisitAutomation.js';
+import siteVisitTestRouter from './routes/siteVisitTest.js';
 import authRouter from './routes/auth.js';
 
 const app = express();
@@ -111,11 +112,16 @@ function verifyMetaSignature(req, res, next) {
   next();
 }
 
-app.post('/api/whatsapp/webhook', express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }), verifyMetaSignature, (req, res) => {
+app.post('/api/whatsapp/webhook', express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }), verifyMetaSignature, async (req, res) => {
   try {
-    const results = processInboundWebhook(req.body);
+    const results = await processInboundWebhook(req.body);
     if (results.length > 0) {
       console.log(`Processed ${results.length} inbound message(s)`);
+      for (const r of results) {
+        if (r.autoReply) {
+          console.log(`  → ${r.leadName}: auto-reply ${r.autoReply.sent ? 'sent' : 'failed'} (${r.autoReply.action})`);
+        }
+      }
     }
     res.status(200).json({ status: 'ok' });
   } catch (err) {
@@ -156,6 +162,7 @@ app.use('/api/post-booking', postBookingRouter);
 app.use('/api/team-analytics', teamAnalyticsRouter);
 app.use('/api/documents', documentPipelineRouter);
 app.use('/api/site-visit-auto', siteVisitAutoRouter);
+app.use('/api/site-visit-test', siteVisitTestRouter);
 
 // WhatsApp status
 app.get('/api/whatsapp/status', authenticate, (req, res) => {
