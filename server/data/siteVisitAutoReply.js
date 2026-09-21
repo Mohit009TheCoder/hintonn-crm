@@ -612,6 +612,11 @@ export function handleSiteVisitReply(lead, messageText) {
   return { handled: false };
 }
 
+// Flush to Firestore after any site visit interaction (non-blocking)
+async function flushAsync() {
+  try { await flushDb(); } catch (e) { /* ignore */ }
+}
+
 function getDefaultDate() {
   const now = new Date();
   if (now.getHours() < BUSINESS_END_HOUR) {
