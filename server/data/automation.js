@@ -22,7 +22,7 @@ import {
   parseInboundWebhook,
   normalizePhone,
 } from '../data/whatsapp-api.js';
-import { handleSiteVisitReply, sendAutoReply, checkNoResponseLeads } from '../data/siteVisitAutoReply.js';
+import { handleAutoReply, sendAutoReply, checkNoResponseLeads } from '../data/autoReplyEngine.js';
 
 /**
  * Send a message via WhatsApp (direct Meta API)
@@ -354,7 +354,7 @@ export async function processInboundWebhook(body) {
     // ── Site Visit Auto-Reply Flow ──────────────────────────────────────────
     // Check if this message is part of a site visit conversation
     try {
-      const svResult = handleSiteVisitReply(lead, inbound.text);
+      const svResult = handleAutoReply(lead, inbound.text);
       if (svResult.handled && svResult.reply) {
         console.log(`🤖 Auto-reply to ${lead.name}: ${svResult.action}`);
         const sendResult = await sendAutoReply(lead, svResult.reply);

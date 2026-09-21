@@ -607,6 +607,7 @@ export function handleSiteVisitReply(lead, messageText) {
     createSiteVisit(lead, scheduledDate);
     const reply = buildTimeConfirmedMessage(lead, project, timeSelection.time, dateStr);
     saveDb();
+    flushAsync(); // Ensure data persists to Firestore
     return { handled: true, reply, action: 'visit_confirmed', scheduledDate };
   }
 

@@ -15,7 +15,7 @@
 import express from 'express';
 import { getDb, saveDb, flushDb } from '../data/db.js';
 import { normalizePhone } from '../data/whatsapp-api.js';
-import { handleSiteVisitReply, sendAutoReply } from '../data/siteVisitAutoReply.js';
+import { handleAutoReply, sendAutoReply } from '../data/autoReplyEngine.js';
 import { handleIncomingMessage } from '../data/automation.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -63,7 +63,7 @@ router.post('/simulate', authenticate, async (req, res) => {
     handleIncomingMessage(lead.id, message, 'in', `test_${Date.now()}`);
 
     // Run site visit auto-reply logic
-    const svResult = handleSiteVisitReply(lead, message);
+    const svResult = handleAutoReply(lead, message);
 
     let sendResult = null;
     if (svResult.handled && svResult.reply) {
