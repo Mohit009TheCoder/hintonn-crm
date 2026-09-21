@@ -188,11 +188,14 @@ export function saveDb() {
 
   // Track pending writes for flushDb()
   if (writes.length > 0) {
+    console.log(`💾 saveDb: ${writes.length} write(s) queued`);
     const batch = Promise.all(writes);
     pendingWrites.push(batch);
     batch.finally(() => {
       pendingWrites = pendingWrites.filter(w => w !== batch);
     });
+  } else {
+    console.log(`💾 saveDb: no changes detected`);
   }
 }
 
