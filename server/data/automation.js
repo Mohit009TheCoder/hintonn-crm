@@ -22,7 +22,7 @@ import {
   parseInboundWebhook,
   normalizePhone,
 } from '../data/whatsapp-api.js';
-import { handleSiteVisitReply, sendAutoReply } from '../data/siteVisitAutoReply.js';
+import { handleSiteVisitReply, sendAutoReply, checkNoResponseLeads } from '../data/siteVisitAutoReply.js';
 
 /**
  * Send a message via WhatsApp (direct Meta API)
@@ -486,6 +486,21 @@ export function startAutomationScheduler() {
       console.error('Conversation cleanup error:', err.message);
     }
   }, 10 * 60 * 1000);
+
+  // No-response follow-up (every 15 minutes)
+  setInterval(async () => {
+    try {
+      const followUps = checkNoResponseLeads();
+      for (const fu of followUps) {
+        const result = await sendAutoReply(fu.lead, fu.message);
+        if (result.success) {
+          console.log(`📨 No-response follow-up sent to ${fu.lead.name}`);
+        }
+      }
+    } catch (err) {
+      console.error('No-response follow-up error:', err.message);
+    }
+  }, 15 * 60 * 1000);
 
   setInterval(async () => {
     try {

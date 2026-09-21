@@ -7,6 +7,7 @@
 export {
   getDb,
   saveDb,
+  flushDb,
   getCollection,
   insertItem,
   asyncInsertItem,

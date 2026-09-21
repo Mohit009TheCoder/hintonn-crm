@@ -15,10 +15,11 @@ export const MESSAGE_TEMPLATES = {
         const p = project || { name: 'Our Upcoming Project', priceMin: 0, loc: 'prime location', possession: 'Soon', available: 10 };
         const first = lead.name.split(' ')[0];
         const priceStr = fmtPrice(p.priceMin);
+        const config = lead.config || lead.property_interest || 'premium';
         return [
           `Hi ${first}! 👋 Thank you for your interest in *${p.name}* by Ashray Group.`,
           ``,
-          `We have *${lead.config}* options starting from *${priceStr}* at ${p.loc}.`,
+          `We have *${config}* options starting from *${priceStr}* at ${p.loc}.`,
           `Possession: *${p.possession}*`,
           ``,
           `Would you like to schedule a site visit this week? Reply *YES* and we'll arrange everything for you! 🏠`
@@ -35,7 +36,7 @@ export const MESSAGE_TEMPLATES = {
         return [
           `Hi ${first}, just checking in! 😊`,
           ``,
-          `We noticed you showed interest in *${project.name}* — ${lead.config}.`,
+          `We noticed you showed interest in *${project.name}* — ${lead.config || 'premium'}.`,
           `We currently have *${project.available} units* available with special pricing.`,
           ``,
           `Would you like me to share the floor plan or schedule a quick call?`,
@@ -57,7 +58,7 @@ export const MESSAGE_TEMPLATES = {
           `Hi ${first}! Thank you for connecting with us. 🙏`,
           ``,
           `Regarding *${project.name}* — we'd love to show you the property in person.`,
-          `We have a *special offer* this month on ${lead.config} units.`,
+          `We have a *special offer* this month on ${lead.config || 'premium'} units.`,
           ``,
           `📅 What day works best for your site visit?`,
           `We can also arrange a *virtual tour* if you prefer.`
@@ -75,7 +76,7 @@ export const MESSAGE_TEMPLATES = {
           `Hi ${first}, quick update! 📢`,
           ``,
           `*${project.name}* has been getting a lot of interest this week.`,
-          `Only *${project.available} units* of ${lead.config} remaining.`,
+          `Only *${project.available} units* of ${lead.config || 'premium'} remaining.`,
           ``,
           `Shall I hold a unit for you? Reply *HOLD* to reserve. 🏡`
         ].join('\n');
@@ -117,7 +118,7 @@ export const MESSAGE_TEMPLATES = {
           `We'd love to arrange a *personalized site visit* for you.`,
           ``,
           `🏠 What you'll see:`,
-          `• Sample flat with ${lead.config} layout`,
+          `• Sample flat with ${lead.config || 'premium'} layout`,
           `• Amenities tour (Gym, Pool, Garden)`,
           `• Neighborhood walkthrough`,
           ``,
@@ -152,7 +153,7 @@ export const MESSAGE_TEMPLATES = {
         return [
           `Hi ${first}, exciting update! 🌟`,
           ``,
-          `We have an *exclusive early-bird offer* for ${lead.config} at *${project.name}*:`,
+          `We have an *exclusive early-bird offer* for ${lead.config || 'premium'} at *${project.name}*:`,
           `💰 Special price for this month only`,
           `🎁 Free modular kitchen upgrade`,
           `📋 Flexible payment schedule`,
@@ -175,7 +176,7 @@ export const MESSAGE_TEMPLATES = {
         return [
           `Hi ${first}, great news! 🎊`,
           ``,
-          `We've prepared a *special offer* for your ${lead.config} at *${project.name}*:`,
+          `We've prepared a *special offer* for your ${lead.config || 'premium'} at *${project.name}*:`,
           `💰 Offer price: *${valStr}*`,
           `📋 Includes all registration charges`,
           `🔑 Ready for immediate possession`,
@@ -234,7 +235,7 @@ export const MESSAGE_TEMPLATES = {
           `Congratulations ${first}! 🎉🎊`,
           ``,
           `Welcome to the *Ashray Group* family!`,
-          `Your booking for *${lead.config}* at *${project.name}* is confirmed.`,
+          `Your booking for *${lead.config || 'premium'}* at *${project.name}* is confirmed.`,
           ``,
           `📋 Next Steps:`,
           `1️⃣ Document verification (our team will contact you)`,
@@ -260,7 +261,7 @@ export const MESSAGE_TEMPLATES = {
           ``,
           `We understand things didn't work out earlier, but we wanted to share some updates:`,
           ``,
-          `🆕 *${project.name}* now has new ${lead.config} options`,
+          `🆕 *${project.name}* now has new ${lead.config || 'premium'} options`,
           `💰 Special pricing for returning customers`,
           `📋 Flexible payment plans available`,
           ``,

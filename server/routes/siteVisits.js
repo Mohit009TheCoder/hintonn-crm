@@ -7,18 +7,34 @@ router.use(authenticate);
 
 router.get('/', authorize('leads', 'read'), (req, res) => {
   const visits = getCollection('siteVisits');
+  const db = getDb();
+  const contacts = db.contacts || [];
+
   const total = visits.length;
+  const scheduled = visits.filter(sv => sv.status === 'scheduled').length;
   const completed = visits.filter(sv => sv.status === 'completed').length;
+  const cancelled = visits.filter(sv => sv.status === 'cancelled').length;
   const booked = visits.filter(sv => sv.outcome === 'Booked').length;
   const convRate = completed > 0 ? Math.round((booked / completed) * 100) : 0;
   const avgDur = completed > 0
     ? Math.round(visits.filter(sv => sv.status === 'completed').reduce((s, sv) => s + (parseInt(sv.duration) || 45), 0) / completed)
     : 45;
 
+  // Auto-reply stats
+  const autoConfirmed = visits.filter(sv => sv.confirmedVia === 'whatsapp_auto_reply').length;
+  const pendingConversations = contacts.filter(c => 
+    c.siteVisitConversation && c.siteVisitConversation.step === 'awaiting_time'
+  ).length;
+
   res.json({
     success: true,
     data: visits,
-    stats: { total, completed, booked, convRate, avgDur }
+    stats: {
+      total, scheduled, completed, cancelled, booked,
+      convRate, avgDur,
+      autoConfirmed,
+      pendingConversations
+    }
   });
 });
 

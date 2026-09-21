@@ -13,7 +13,7 @@
  */
 
 import express from 'express';
-import { getDb, saveDb } from '../data/db.js';
+import { getDb, saveDb, flushDb } from '../data/db.js';
 import { normalizePhone } from '../data/whatsapp-api.js';
 import { handleSiteVisitReply, sendAutoReply } from '../data/siteVisitAutoReply.js';
 import { handleIncomingMessage } from '../data/automation.js';
@@ -157,6 +157,18 @@ router.post('/reset/:leadId', authenticate, (req, res) => {
       success: true,
       message: `Conversation state cleared for ${lead.name}`
     });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Force flush all pending data to Firestore.
+ */
+router.post('/flush', authenticate, async (req, res) => {
+  try {
+    await flushDb();
+    res.json({ success: true, message: 'Data flushed to Firestore' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

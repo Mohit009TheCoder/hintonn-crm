@@ -4,7 +4,7 @@
  * Used for Railway deployment and local development.
  */
 import app from './app.js';
-import { initDb } from './data/db.js';
+import { initDb, flushDb } from './data/db.js';
 import { startAutomationScheduler, isWhatsAppConfigured } from './data/automation.js';
 import { checkSLAViolations, applyTemperatureDecay } from './data/leadEngine.js';
 import { getDb } from './data/db.js';
@@ -26,6 +26,15 @@ initDb()
 
     // Start automation scheduler
     startAutomationScheduler();
+
+    // Periodic flush to Firestore (every 30 seconds)
+    setInterval(async () => {
+      try {
+        await flushDb();
+      } catch (err) {
+        console.error('Periodic flush error:', err.message);
+      }
+    }, 30 * 1000);
 
     // SLA monitoring (every 5 minutes)
     setInterval(() => {
@@ -80,8 +89,9 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('📴 SIGTERM received — shutting down...');
+  await flushDb();
   if (server) {
     server.close(() => process.exit(0));
   } else {
@@ -89,7 +99,9 @@ process.on('SIGTERM', () => {
   }
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
+  console.log('📴 SIGINT received — flushing data...');
+  await flushDb();
   if (server) server.close(() => process.exit(0));
   else process.exit(0);
 });

@@ -185,6 +185,47 @@ export function saveDb() {
 }
 
 /**
+ * flushDb() — async version that awaits all writes.
+ * Use during server shutdown to ensure no data is lost.
+ */
+export async function flushDb() {
+  if (!cache) return;
+  const writes = [];
+
+  for (const colName of COLLECTIONS) {
+    const items = cache[colName];
+    if (!Array.isArray(items)) continue;
+    const colRef = db.collection(colName);
+    for (const item of items) {
+      const docId = String(item.id);
+      const currentStr = JSON.stringify(item);
+      const cacheKey = `${colName}_${docId}`;
+      if (cacheStrings[cacheKey] !== currentStr) {
+        const { id, ...data } = item;
+        writes.push(colRef.doc(docId).set(data, { merge: true }));
+        cacheStrings[cacheKey] = currentStr;
+      }
+    }
+  }
+
+  for (const key of SINGLETON_KEYS) {
+    if (cache[key] && typeof cache[key] === 'object' && Object.keys(cache[key]).length > 0) {
+      const currentStr = JSON.stringify(cache[key]);
+      const cacheKey = `singleton_${key}`;
+      if (cacheStrings[cacheKey] !== currentStr) {
+        writes.push(db.collection(key).doc('_default').set(cache[key], { merge: true }));
+        cacheStrings[cacheKey] = currentStr;
+      }
+    }
+  }
+
+  if (writes.length > 0) {
+    await Promise.all(writes);
+    console.log(`💾 Flushed ${writes.length} pending writes to Firestore`);
+  }
+}
+
+/**
  * getCollection(name) — returns an array from the cache.
  */
 export function getCollection(collectionName) {
