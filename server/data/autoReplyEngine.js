@@ -5,7 +5,7 @@
  * Works with all message templates: YES, CALL, PLAN, HOLD, VISIT, BOOK, DONE, etc.
  */
 
-import { getDb, saveDb, flushDb } from './db.js';
+import { getDb, saveDb, flushDb, forceSaveItem } from './db.js';
 import { sendTextMessage } from './whatsapp-api.js';
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -512,14 +512,14 @@ export function handleAutoReply(lead, messageText) {
     // Cancel
     if (intent === 'cancel') {
       cancelSiteVisit(lead);
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyCancelled(lead), action: 'visit_cancelled' };
     }
 
     // Negative
     if (intent === 'no') {
       clearConversationState(lead);
-      saveDb();
+      saveDb(); persistLead(lead);
       return { handled: false, action: 'declined' };
     }
 
@@ -527,7 +527,7 @@ export function handleAutoReply(lead, messageText) {
     if (intent === 'callback') {
       clearConversationState(lead);
       createCallbackTask(lead, project, db);
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyCallback(lead, project), action: 'callback_requested' };
     }
 
@@ -536,7 +536,7 @@ export function handleAutoReply(lead, messageText) {
       clearConversationState(lead);
       if (!lead.timeline) lead.timeline = [];
       lead.timeline.unshift({ type: 'brochure', text: 'Floor plan requested via WhatsApp', time: 'Just now', icon: 'file' });
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyFloorPlan(lead, project), action: 'floor_plan_sent' };
     }
 
@@ -545,7 +545,7 @@ export function handleAutoReply(lead, messageText) {
       clearConversationState(lead);
       if (!lead.tags) lead.tags = [];
       if (!lead.tags.includes('unit-hold')) lead.tags.push('unit-hold');
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyHold(lead, project), action: 'unit_hold_requested' };
     }
 
@@ -559,7 +559,7 @@ export function handleAutoReply(lead, messageText) {
         lead.dealProb = Math.max(lead.dealProb || 0, 80);
         lead.timeline.unshift({ type: 'stage-change', text: 'Stage auto-advanced to NEGOTIATION (booking intent)', time: 'Just now', icon: 'target' });
       }
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyBook(lead, project), action: 'booking_intent' };
     }
 
@@ -579,7 +579,7 @@ export function handleAutoReply(lead, messageText) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const scheduledDate = `${months[visitDate.getMonth()]} ${visitDate.getDate()}, ${timeSelection.time}`;
     createSiteVisit(lead, scheduledDate);
-    saveDb(); flushAsync();
+    saveDb(); persistLead(lead); flushAsync();
     return { handled: true, reply: replyVisit(lead, project, timeSelection), action: 'visit_confirmed', scheduledDate };
   }
 
@@ -592,25 +592,25 @@ export function handleAutoReply(lead, messageText) {
   switch (intent) {
     case 'cancel':
       cancelSiteVisit(lead);
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyCancelled(lead), action: 'visit_cancelled' };
 
     case 'reschedule':
       setConversationState(lead, { step: 'awaiting_time', startedAt: new Date().toISOString() });
-      saveDb();
+      saveDb(); persistLead(lead);
       return { handled: true, reply: replyReschedule(lead), action: 'reschedule_prompt' };
 
     case 'callback':
       // Create a follow-up task
       if (!db.tasks) db.tasks = [];
       createCallbackTask(lead, project, db);
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyCallback(lead, project), action: 'callback_requested' };
 
     case 'floor_plan':
       if (!lead.timeline) lead.timeline = [];
       lead.timeline.unshift({ type: 'brochure', text: 'Floor plan requested via WhatsApp', time: 'Just now', icon: 'file' });
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyFloorPlan(lead, project), action: 'floor_plan_sent' };
 
     case 'hold':
@@ -618,12 +618,12 @@ export function handleAutoReply(lead, messageText) {
       if (!lead.tags.includes('unit-hold')) lead.tags.push('unit-hold');
       if (!lead.timeline) lead.timeline = [];
       lead.timeline.unshift({ type: 'deal', text: 'Unit hold requested via WhatsApp', time: 'Just now', icon: 'lock' });
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyHold(lead, project), action: 'unit_hold_requested' };
 
     case 'visit':
       setConversationState(lead, { step: 'awaiting_time', startedAt: new Date().toISOString() });
-      saveDb();
+      saveDb(); persistLead(lead);
       return { handled: true, reply: replyVisit(lead, project, null), action: 'time_slots_sent' };
 
     case 'book':
@@ -634,7 +634,7 @@ export function handleAutoReply(lead, messageText) {
         lead.dealProb = Math.max(lead.dealProb || 0, 80);
         lead.timeline.unshift({ type: 'stage-change', text: 'Stage auto-advanced to NEGOTIATION (booking intent)', time: 'Just now', icon: 'target' });
       }
-      saveDb(); flushAsync();
+      saveDb(); persistLead(lead); flushAsync();
       return { handled: true, reply: replyBook(lead, project), action: 'booking_intent' };
 
     case 'yes':
@@ -646,19 +646,19 @@ export function handleAutoReply(lead, messageText) {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const scheduledDate = `${months[visitDate.getMonth()]} ${visitDate.getDate()}, ${timeSelection.time}`;
         createSiteVisit(lead, scheduledDate);
-        saveDb(); flushAsync();
+        saveDb(); persistLead(lead); flushAsync();
         return { handled: true, reply: replyVisit(lead, project, timeSelection), action: 'visit_confirmed', scheduledDate };
       }
 
       // Show time slots
       setConversationState(lead, { step: 'awaiting_time', startedAt: new Date().toISOString() });
-      saveDb();
+      saveDb(); persistLead(lead);
       return { handled: true, reply: replyYes(lead, project), action: 'time_slots_sent' };
 
     case 'no':
       if (!lead.timeline) lead.timeline = [];
       lead.timeline.unshift({ type: 'whatsapp', text: `Client declined: "${messageText}"`, time: 'Just now', icon: 'messagecircle' });
-      saveDb();
+      saveDb(); persistLead(lead);
       return { handled: false, action: 'declined' };
 
     case 'time_selection':
@@ -671,7 +671,7 @@ export function handleAutoReply(lead, messageText) {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const scheduledDate = `${months[visitDate.getMonth()]} ${visitDate.getDate()}, ${ts.time}`;
         createSiteVisit(lead, scheduledDate);
-        saveDb(); flushAsync();
+        saveDb(); persistLead(lead); flushAsync();
         return { handled: true, reply: replyVisit(lead, project, ts), action: 'visit_confirmed', scheduledDate };
       }
       return { handled: false };
@@ -701,7 +701,7 @@ export async function sendAutoReply(lead, replyText) {
       time: 'Just now', icon: 'messagecircle'
     });
     lead.lastInboundAt = new Date().toISOString();
-    saveDb();
+    saveDb(); persistLead(lead);
   }
 
   return result;
@@ -734,7 +734,7 @@ export function checkNoResponseLeads() {
     }
   }
 
-  if (followUps.length > 0) saveDb();
+  if (followUps.length > 0) saveDb(); persistLead(lead);
   return followUps;
 }
 
@@ -742,6 +742,11 @@ export function checkNoResponseLeads() {
 
 async function flushAsync() {
   try { await flushDb(); } catch (e) { /* ignore */ }
+}
+
+// Always persist lead changes to Firestore immediately
+function persistLead(lead) {
+  try { forceSaveItem('contacts', lead.id); } catch (e) { /* ignore */ }
 }
 
 export { isPositiveResponse, isNegativeResponse } from './siteVisitAutoReply.js';

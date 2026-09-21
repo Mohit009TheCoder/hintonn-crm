@@ -220,6 +220,34 @@ export function getCollection(collectionName) {
 }
 
 /**
+ * forceSaveItem() — always writes to Firestore, bypassing change detection.
+ * Use when you need to guarantee persistence immediately.
+ */
+export function forceSaveItem(collectionName, id) {
+  const c = getDb();
+  const list = c[collectionName] || [];
+  const item = list.find(i => Number(i.id) === Number(id));
+  if (!item) return false;
+
+  const { id: _id, ...data } = item;
+  const docId = String(id);
+  const promise = db.collection(collectionName).doc(docId).set(data, { merge: true })
+    .then(() => {
+      cacheStrings[`${collectionName}_${docId}`] = JSON.stringify(item);
+      console.log(`✅ forceSave: ${collectionName}/${docId} persisted`);
+    })
+    .catch(err => console.error(`forceSave ${collectionName}/${docId} error:`, err.message));
+  
+  // Track for flushDb
+  pendingWrites.push(promise);
+  promise.finally(() => {
+    pendingWrites = pendingWrites.filter(w => w !== promise);
+  });
+  
+  return true;
+}
+
+/**
  * insertItem(collectionName, item) — adds to cache + writes to Firestore.
  * Auto-assigns a numeric ID.
  */
